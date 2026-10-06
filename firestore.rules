@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function admin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.enabled == true;
+    }
+    match /admins/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, write: if false;
+    }
+    match /public/config {
+      allow get: if true;
+      allow list, write: if false;
+    }
+    match /releases/{releaseId}/people/{cedula} {
+      // Consulta puntual por cédula, nunca listado público.
+      // Conocer una cédula permite consultar su pasaporte: NO es autenticación.
+      allow get: if cedula.matches('^[0-9]{1,20}$') &&
+        (admin() || get(/databases/$(database)/documents/public/config).data.activeRelease == releaseId);
+      allow list, write: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

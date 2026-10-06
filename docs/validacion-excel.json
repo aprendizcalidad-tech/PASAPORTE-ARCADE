@@ -1,0 +1,20 @@
+{
+  "people": 1951,
+  "courseCount": 288,
+  "badgeCount": 117,
+  "rows": 95812,
+  "completed": 68093,
+  "report": {
+    "rows": 95812,
+    "approved": 95812,
+    "duplicates": 27719,
+    "invalid": 0,
+    "notApproved": 0,
+    "missingBadge": 46076,
+    "warnings": []
+  },
+  "maxCourses": 142,
+  "maxProfileBytes": 48892,
+  "payloadBytes": 17297054,
+  "chunks": 40
+}

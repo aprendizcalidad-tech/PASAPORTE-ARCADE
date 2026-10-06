@@ -1,0 +1,1 @@
+{"name":"pasaporte-mundo-arcade","version":"1.0.0","private":true,"scripts":{"test":"node --test tests/*.test.cjs","check":"node tests/check-syntax.cjs","serve":"python3 -m http.server 8080"}}
