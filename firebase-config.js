@@ -9,7 +9,7 @@ export const firebaseConfig = {
   appId: "1:174291882658:web:a9933f55ae4d388addfdfb"
 };
 export const appConfig = {
-  gasUrl: 'REEMPLAZAR_URL_WEB_APP_TERMINADA_EN_EXEC',
+  gasUrl: 'https://script.google.com/macros/s/AKfycbw6yjadO3a8DXp3gL0952FKXduv9KFTcZ1Ukws-ngH408VKgShCSjfKaAJY_Ob5pQva/exec',
   title: 'Pasaporte Mundo Arcade',
   // Metas de gamificación editoriales, no categorías que existan en el Excel.
   levelThresholds: [1, 5, 15, 30, 50],
