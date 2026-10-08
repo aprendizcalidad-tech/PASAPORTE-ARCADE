@@ -1,5 +1,6 @@
 import {connect} from './firebase.js';
 import {appConfig} from '../firebase-config.js';
+import {createRoute} from './progress.js?v=3';
 const $=id=>document.getElementById(id);
 const demo=new URLSearchParams(location.search).get('demo')==='1';
 let person=null,publication=null,sequence=0,historyOpen=false,spread=0,flipAnimation=null,flipVersion=0;
@@ -32,7 +33,7 @@ function resetResults(){
   ['completed-count','badge-count'].forEach(id=>$(id).textContent='—');$('level-name').textContent='Explorador';$('level-number').textContent='Un nuevo comienzo';$('course-count').textContent='';$('updated-at').textContent='APRENDE. AVANZA. DEJA HUELLA.';
   $('course-grid').innerHTML='<div class="empty-card"><h3>Tu pasaporte te espera</h3><p>Ingresa tu cédula para consultar tus cursos e insignias.</p></div>';
   $('badge-grid').innerHTML='<div class="empty-badges"><img src="assets/medal.svg" alt=""><p>Aquí brillarán tus logros.</p></div>';$('more-history').hidden=true;
-  $('history-courses').replaceChildren();$('history-badges').replaceChildren();
+  $('history-courses').replaceChildren();$('history-badges').replaceChildren();route.refresh();
 }
 function courseMarkup(c,i){return `<button class="course-card" type="button" data-course="${i}" aria-label="Ver detalle de ${esc(c.title)}"><span class="course-icon" aria-hidden="true">${icon(c.title)}</span><span class="course-body"><h3>${esc(c.title)}</h3><span class="complete">⬟ Completado</span><span class="course-date">▣ ${esc(date(c.date))}<b>›</b></span></span></button>`;}
 function badgeMarkup(b,i){return `<article class="badge-card" style="--i:${i%6}"><div class="badge-image"><img src="${esc(safeImage(b.image))}" alt="${esc(b.name)}" loading="lazy" referrerpolicy="no-referrer"></div><h3>${esc(b.name)}</h3><p>Aprendizaje que deja huella</p><time datetime="${esc(b.date)}">▣ ${esc(date(b.date))}</time></article>`;}
@@ -81,12 +82,12 @@ function render(){
   showSpread(false);randomAvatar();
   $('person-name').textContent=person.name;$('person-id').textContent='Cédula: '+person.cedula;$('header-id').textContent=person.cedula;
   $('player-level').textContent='Jugador Arcade';$('completed-count').textContent=count;$('badge-count').textContent=person.badges.length;
-  $('level-name').textContent=appConfig.levelNames[level-1];$('level-number').textContent='Nivel '+level;
+  $('level-name').textContent=count>=600?'Leyenda Arcade':count>=75?'Maestro Arcade':appConfig.levelNames[level-1];$('level-number').textContent='Nivel '+level;
   $('updated-at').textContent=publication.updatedAt?'ACTUALIZADO: '+date(publication.updatedAt.slice(0,10)):'VISTA DE DEMOSTRACIÓN';
   $('course-count').textContent=count+' completados';
   $('course-grid').innerHTML=person.courses.slice(0,5).map(courseMarkup).join('');
   renderBadgesInto($('badge-grid'),person.badges.slice(0,3),'Aún no hay insignias asociadas en el archivo.');
-  $('more-history').hidden=false;
+  $('more-history').hidden=false;route.refresh();
   $('passport').classList.remove('turning');void $('passport').offsetWidth;$('passport').classList.add('turning');
 }
 async function search(event){
@@ -114,6 +115,7 @@ function loadDemo(){
   person={name:'Alex Martínez',cedula:'1234567890',courses:titles.map((title,i)=>({id:String(i+1),title,date:'2026-02-'+String(10+i*3).padStart(2,'0'),approval:100,image:'assets/medal.svg'})),badges:['Explorador','Prevención Pro','Guardián SST','Misión Completa','Nivel Experto'].map((name,i)=>({name,image:'assets/medal.svg',date:'2026-02-'+String(10+i*3).padStart(2,'0')}))};
   publication={courseCount:5,badgeCount:5};render();$('cedula').value='1234567890';
 }
+const route=createRoute({getPerson:()=>person,getPublication:()=>publication,getLevel:()=>$('level-name').textContent,getAvatar:()=>$('animal-avatar'),openHistory:()=>{cancelFlip();showSpread(false);turnTo(true,0);}});
 $('search-form').addEventListener('submit',search);
 $('clear-search').addEventListener('click',()=>{sequence++;$('cedula').value='';resetResults();status('Tu próxima aventura comienza con lo que aprendes.');$('search-button').disabled=false;$('search-button').querySelector('span').textContent='Consultar progreso';$('passport').classList.remove('loading');$('cedula').focus();});
 $('more-history').addEventListener('click',()=>turnTo(true,0));
@@ -129,6 +131,6 @@ document.addEventListener('keydown',e=>{
 document.querySelectorAll('.topbar nav a').forEach(link=>link.addEventListener('click',()=>{if(historyOpen){cancelFlip();showSpread(false);}}));
 $('help-button').addEventListener('click',()=>$('help-dialog').showModal());
 document.querySelectorAll('.dialog-close').forEach(button=>button.addEventListener('click',()=>button.closest('dialog').close()));
-$('passport').addEventListener('click',e=>{const button=e.target.closest('[data-course]');if(!button||!person)return;const c=person.courses[Number(button.dataset.course)];$('course-details').innerHTML=`<h2>${esc(c.title)}</h2><span class="complete">✓ Completado · Aprobación 100 %</span><p style="margin-top:20px">Finalización: ${esc(date(c.date))}</p><p>Código de capacitación: ${esc(c.id)}</p><p>${c.image?'Este curso tiene una insignia asociada.':'El archivo no tiene una insignia asociada a este curso.'}</p>`;$('course-dialog').showModal();});
-randomAvatar();
+document.addEventListener('click',e=>{const button=e.target.closest('[data-course]');if(!button||!person)return;const c=person.courses[Number(button.dataset.course)];$('course-details').innerHTML=`<h2>${esc(c.title)}</h2><span class="complete">✓ Completado · Aprobación 100 %</span><p style="margin-top:20px">Finalización: ${esc(date(c.date))}</p><p>Código de capacitación: ${esc(c.id)}</p><p>${c.image?'Este curso tiene una insignia asociada.':'El archivo no tiene una insignia asociada a este curso.'}</p>`;$('course-dialog').showModal();});
+randomAvatar();route.refresh();
 if(demo){$('demo-notice').hidden=false;loadDemo();status('Demostración con datos ficticios; no consulta Firebase.');}
