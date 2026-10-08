@@ -1,12 +1,1 @@
-{
-  "name": "campus-finnova",
-  "private": true,
-  "version": "7.0.0",
-  "scripts": {
-    "test": "node tests/assignments.cjs && node tests/certificate-backend.cjs",
-    "test:browser": "node tests/assignments-browser.cjs"
-  },
-  "devDependencies": {
-    "playwright": "1.62.1"
-  }
-}
+{"name":"pasaporte-mundo-arcade","version":"1.0.0","private":true,"scripts":{"test":"node --test tests/*.test.cjs","check":"node tests/check-syntax.cjs","serve":"python3 -m http.server 8080"}}
