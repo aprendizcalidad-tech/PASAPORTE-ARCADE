@@ -9,14 +9,58 @@ export const ROUTE_MILESTONES=[
   {name:'Torre Maestra',target:75,subtitle:'Tu conocimiento te eleva',x:68,y:28},
   {name:'Templo Leyenda',target:ROUTE_GOAL,subtitle:'600 aprendizajes',x:92,y:29}
 ];
+// Posiciones de los pies sobre las plataformas, en porcentaje del mapa.
+export const ROUTE_TRAVEL_POINTS=[{x:20,y:77},{x:29,y:58},{x:51,y:69},{x:84,y:65},{x:61,y:43},{x:89,y:25}];
+export function routeIslandForCount(value){
+  const count=Number(value);
+  if(!Number.isFinite(count)||count<1)return -1;
+  let island=-1;
+  ROUTE_MILESTONES.forEach((m,i)=>{if(count>=m.target)island=i;});
+  return island;
+}
 const $=id=>document.getElementById(id);
 const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const formatDate=s=>{if(!s)return 'Sin fecha registrada';const d=new Date(s+'T12:00:00Z');return Number.isNaN(d.getTime())?'Sin fecha registrada':new Intl.DateTimeFormat('es-CO',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(d);};
 const imageSrc=s=>/^https:\/\/[^\s]+$/i.test(String(s))||s==='assets/medal.svg'?s:'assets/medal.svg';
 export function createRoute({getPerson,getLevel,getAvatar,openHistory}){
-  let galleryPage=0;
+  let galleryPage=0,travelAnimation=null,travelVersion=0;
+  function stopTravel(){
+    travelVersion++;travelAnimation?.cancel();travelAnimation=null;
+    $('route-traveler').classList.remove('walking');
+  }
+  function placeTraveler(point){
+    $('route-traveler').style.left=point.x+'%';$('route-traveler').style.top=point.y+'%';
+  }
+  function travelerState(){
+    const p=getPerson(),index=p?routeIslandForCount(p.courses.length):-1;
+    const visible=index>=0;
+    $('route-traveler').hidden=!visible;$('route-replay').hidden=!visible;
+    if(visible){placeTraveler(ROUTE_TRAVEL_POINTS[index]);$('route-traveler').setAttribute('aria-label','Tu personaje en '+ROUTE_MILESTONES[index].name);}
+    return index;
+  }
+  async function travelRoute(){
+    stopTravel();const index=travelerState(),version=travelVersion;
+    if(index<0||$('route-view').hidden)return;
+    const character=$('route-traveler'),finalPoint=ROUTE_TRAVEL_POINTS[index];
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches||!character.animate){placeTraveler(finalPoint);return;}
+    placeTraveler(ROUTE_TRAVEL_POINTS[0]);character.classList.add('walking');
+    for(let i=0;i<=index;i++){
+      if(version!==travelVersion)return;
+      const start=ROUTE_TRAVEL_POINTS[Math.max(0,i-1)],end=ROUTE_TRAVEL_POINTS[i];
+      character.classList.toggle('facing-left',end.x<start.x);
+      travelAnimation=character.animate([
+        {left:start.x+'%',top:start.y+'%',opacity:i===0?0:1},
+        {left:(start.x+end.x)/2+'%',top:((start.y+end.y)/2-2)+'%',opacity:1,offset:.5},
+        {left:end.x+'%',top:end.y+'%',opacity:1}
+      ],{duration:i===0?350:750,easing:'ease-in-out'});
+      try{await travelAnimation.finished;}catch{return;}
+      if(version!==travelVersion)return;
+      placeTraveler(end);travelAnimation=null;
+    }
+    character.classList.remove('walking');character.classList.remove('facing-left');
+  }
   function showPassport(hash='#perfil'){
-    $('route-view').hidden=true;$('inicio').hidden=false;document.body.classList.remove('route-mode');
+    stopTravel();travelerState();$('route-view').hidden=true;$('inicio').hidden=false;document.body.classList.remove('route-mode');
     if(location.hash!==hash)location.hash=hash;syncNavigation(false);
   }
   function syncNavigation(open){
@@ -27,7 +71,7 @@ export function createRoute({getPerson,getLevel,getAvatar,openHistory}){
   }
   function syncView(){
     const open=location.hash==='#ruta';$('route-view').hidden=!open;$('inicio').hidden=open;document.body.classList.toggle('route-mode',open);syncNavigation(open);
-    if(open){$('route-title').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
+    if(open){$('route-title').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});travelRoute();}else{stopTravel();travelerState();}
   }
   function history(){if(!getPerson()){lookup();return;}showPassport('#cursos');openHistory();}
   function lookup(){showPassport('#inicio');$('cedula').focus();$('search-form').scrollIntoView({behavior:'smooth',block:'center'});}
@@ -41,7 +85,7 @@ export function createRoute({getPerson,getLevel,getAvatar,openHistory}){
     $('route-gallery-controls').innerHTML=pages>1?`<button type="button" data-gallery-step="-1" aria-label="Insignias anteriores" ${galleryPage===0?'disabled':''}>‹</button>${Array.from({length:to-from},(_,i)=>i+from).map(i=>`<button type="button" class="gallery-dot ${i===galleryPage?'active':''}" data-gallery-page="${i}" aria-label="Página ${i+1} de ${pages}" ${i===galleryPage?'aria-current="true"':''}></button>`).join('')}<button type="button" data-gallery-step="1" aria-label="Insignias siguientes" ${galleryPage>=pages-1?'disabled':''}>›</button><span class="visually-hidden" role="status">Página ${galleryPage+1} de ${pages}</span>`:'';
   }
   function refresh(){
-    galleryPage=0;const p=getPerson(),count=p?.courses.length??0;
+    stopTravel();galleryPage=0;const p=getPerson(),count=p?.courses.length??0;const currentIsland=travelerState();
     $('route-name').textContent=p?.name??'Tu aventura te espera';$('route-cedula').textContent=p?'Cédula: '+p.cedula:'Consulta tu cédula para comenzar';$('route-id').textContent=p?.cedula??'—';
     $('route-completed').textContent=p?count:'—';$('route-badges-count').textContent=p?p.badges.length:'—';$('route-level').textContent=p?getLevel():'Explorador';
     const avatar=getAvatar();$('route-avatar').style.backgroundPosition=avatar.style.backgroundPosition;$('route-avatar').setAttribute('aria-label',avatar.getAttribute('aria-label')??'Avatar animal');
@@ -50,14 +94,15 @@ export function createRoute({getPerson,getLevel,getAvatar,openHistory}){
     $('route-goal-numbers').textContent=p?`${count} / ${ROUTE_GOAL}`:`— / ${ROUTE_GOAL}`;
     $('route-goal-fill').style.width=Math.min(100,count/ROUTE_GOAL*100)+'%';$('route-goal-meter').setAttribute('aria-valuenow',String(Math.min(count,ROUTE_GOAL)));$('route-goal-meter').setAttribute('aria-valuetext',`${count} cursos completados; meta de ${ROUTE_GOAL}`);
     $('route-view').classList.toggle('legend-earned',earned);
-    $('route-nodes').innerHTML=ROUTE_MILESTONES.map((m,i)=>{const done=!!p&&count>=m.target;return `<button type="button" class="route-node ${done?'earned':'future'}" data-milestone="${i}" style="--node-x:${m.x}%;--node-y:${m.y}%" aria-label="${escapeHtml(m.name)}: ${done?'hito alcanzado':p?'meta de aventura':'consulta tu cédula'}, ${m.target} cursos"><span class="node-state" aria-hidden="true">${done?'✓':p?'♙':'✦'}</span><span><strong>${escapeHtml(m.name)}</strong><small>${escapeHtml(done&&i===4?count+' aprendizajes':m.subtitle)}</small></span></button>`;}).join('');
-    $('route-map-note').textContent=p?'Selecciona una isla para descubrir su hito.':'Consulta tu cédula para activar tu ruta.';
+    $('route-nodes').innerHTML=ROUTE_MILESTONES.map((m,i)=>{const done=!!p&&count>=m.target;return `<button type="button" class="route-node ${done?'earned':'future'} ${i===currentIsland?'current-island':''}" data-milestone="${i}" style="--node-x:${m.x}%;--node-y:${m.y}%" aria-label="${escapeHtml(m.name)}: ${done?'hito alcanzado':p?'meta de aventura':'consulta tu cédula'}, ${m.target} cursos"><span class="node-state" aria-hidden="true">${done?'✓':p?'♙':'✦'}</span><span><strong>${escapeHtml(m.name)}</strong><small>${escapeHtml(done&&i===4?count+' aprendizajes':m.subtitle)}</small></span></button>`;}).join('');
+    $('route-map-note').textContent=currentIsland>=0?'Tu isla actual: '+ROUTE_MILESTONES[currentIsland].name:p?'Tu ruta comienza con tu primer curso completado.':'Consulta tu cédula para activar tu ruta.';
     const courses=p?.courses??[];
     // Ordenar una copia para conservar los índices usados por el detalle del pasaporte.
     const recent=courses.map((c,i)=>({c,i})).sort((a,b)=>String(b.c.date??'').localeCompare(String(a.c.date??''))).slice(0,3);
     $('route-recent-courses').innerHTML=recent.length?recent.map(({c,i})=>`<button type="button" class="route-course" data-course="${i}" aria-label="Ver detalle de ${escapeHtml(c.title)}"><span class="route-course-icon" aria-hidden="true">📘</span><strong>${escapeHtml(c.title)}</strong><span class="complete">✓ Completado</span><time datetime="${escapeHtml(c.date)}">▣ ${escapeHtml(formatDate(c.date))}</time><span class="course-chevron" aria-hidden="true">›</span></button>`).join(''):`<p class="route-empty">${p?'Aún no hay cursos completados para mostrar.':'Tu historia aparecerá aquí al consultar tu cédula.'}</p>`;
-    $('route-lookup').textContent=p?'Consultar otra cédula →':'Consultar mi cédula →';renderGallery();
+    $('route-lookup').textContent=p?'Consultar otra cédula →':'Consultar mi cédula →';renderGallery();if(!$('route-view').hidden)travelRoute();
   }
+  $('route-replay').addEventListener('click',travelRoute);
   $('route-all-courses').addEventListener('click',history);$('route-all-badges').addEventListener('click',history);$('route-explore').addEventListener('click',history);$('route-lookup').addEventListener('click',lookup);
   $('route-gallery-controls').addEventListener('click',e=>{const button=e.target.closest('button');if(!button||button.disabled)return;if(button.dataset.galleryPage!==undefined)galleryPage=Number(button.dataset.galleryPage);else if(button.dataset.galleryStep)galleryPage+=Number(button.dataset.galleryStep);renderGallery();});
   $('route-nodes').addEventListener('click',e=>{

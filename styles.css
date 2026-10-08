@@ -122,3 +122,21 @@
 .route-launch{font-size:12px;color:#0073b6;font-weight:600;white-space:nowrap;display:inline-block}
 .route-launch:hover{text-decoration:underline}.route-mobile-tabs{display:none}
 @media(max-width:850px){.route-mobile-tabs{display:flex;justify-content:center;gap:8px;padding:8px 12px;background:#051d35;border-bottom:1px solid #1c5e7d}.route-mobile-tabs a{padding:9px 20px;color:#b4dbea;border:1px solid #31627f;border-radius:8px;font-weight:600;font-size:13px}.route-mobile-tabs a.active{color:#0ee2f5;border-color:#00c7e7;background:#06415a}.route-launch{font-size:11px}}
+
+/* Personaje separado del paisaje: viaje al último hito alcanzado. */
+.world-art{background-image:url('assets/ruta-arcade-mundo-v4.png')}
+.route-traveler{position:absolute;left:20%;top:77%;width:7.5%;min-width:34px;max-width:92px;transform:translate(-50%,-94%);z-index:2;pointer-events:none;filter:drop-shadow(0 5px 5px #001b3570);will-change:left,top}
+.traveler-body{display:block;transform-origin:center;transition:transform .15s}
+.traveler-body img{display:block;width:100%;height:auto;animation:travelerIdle 2.4s ease-in-out infinite;transform-origin:bottom center}
+.route-traveler.facing-left .traveler-body{transform:scaleX(-1)}
+.route-traveler.walking .traveler-body img{animation:travelerWalk .23s ease-in-out infinite alternate}
+.traveler-shadow{position:absolute;left:12%;right:12%;height:12%;bottom:-3%;background:radial-gradient(ellipse,#02dffa70,transparent 70%);border-radius:50%;z-index:-1}
+.route-nodes{z-index:3}
+.route-node.current-island{border-color:#ffdd8a;box-shadow:0 0 16px #ffd9798c,0 4px 10px #00133b70}
+.route-node.current-island .node-state{background:linear-gradient(#ffe9a0,#b27b21);border-color:#ffe9b2}
+.route-replay{position:absolute;right:12px;bottom:10px;z-index:4;border:1px solid #61c5e2;border-radius:7px;padding:7px 10px;font-size:11px;font-weight:600;color:#d9f7ff;background:#082949da;box-shadow:0 3px 10px #00172d55}
+.route-replay:hover{background:#0b5072}.route-map-note{padding-right:160px;max-width:100%;line-height:1.3}
+@keyframes travelerWalk{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(-4px) rotate(2deg)}}
+@keyframes travelerIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@media(max-width:520px){.route-traveler{width:9%;min-width:30px;max-width:42px}.route-replay{font-size:8px;right:8px;bottom:6px;padding:5px 7px}.route-map-note{padding-right:115px}}
+@media(prefers-reduced-motion:reduce){.traveler-body,.traveler-body img{animation:none!important;transition:none!important}.route-traveler{will-change:auto}}

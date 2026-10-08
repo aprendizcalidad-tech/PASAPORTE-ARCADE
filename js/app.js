@@ -1,6 +1,6 @@
 import {connect} from './firebase.js';
 import {appConfig} from '../firebase-config.js';
-import {createRoute} from './progress.js?v=3';
+import {createRoute} from './progress.js?v=4';
 const $=id=>document.getElementById(id);
 const demo=new URLSearchParams(location.search).get('demo')==='1';
 let person=null,publication=null,sequence=0,historyOpen=false,spread=0,flipAnimation=null,flipVersion=0;
