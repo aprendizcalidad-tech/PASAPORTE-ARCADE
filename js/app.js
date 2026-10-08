@@ -2,34 +2,91 @@ import {connect} from './firebase.js';
 import {appConfig} from '../firebase-config.js';
 const $=id=>document.getElementById(id);
 const demo=new URLSearchParams(location.search).get('demo')==='1';
-let person=null,publication=null,coursesShown=5,badgesShown=5,sequence=0;
+let person=null,publication=null,sequence=0,historyOpen=false,spread=0,flipAnimation=null,flipVersion=0;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=s=>s ? new Intl.DateTimeFormat('es-CO',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(s+'T12:00:00Z')) : 'Sin fecha registrada';
 function safeImage(s){return /^https:\/\/[^\s]+$/i.test(String(s)) || s==='assets/medal.svg' ? s : 'assets/medal.svg';}
 function icon(title){const t=title.toLowerCase();return /emergencia|evacua/.test(t)?'🏃':/salud|pausa|bienestar/.test(t)?'♥':/riesgo|prevenci/.test(t)?'⚠':/epp|protecci/.test(t)?'🥽':/seguridad/.test(t)?'⛑':/tecnol|digital|sistema/.test(t)?'▥':'📘';}
 function status(message,error=false){$('search-status').textContent=message;$('search-status').classList.toggle('error',error);}
-function resetResults(){person=null;publication=null;$('person-name').textContent='Tu historia está por descubrir';$('person-id').textContent='Consulta tu número de cédula';$('header-id').textContent='—';$('player-level').textContent='Jugador Arcade';['completed-count','badge-count','progress-number'].forEach(id=>$(id).textContent='—');$('catalog-count').textContent='Tu aprendizaje';$('badge-total').textContent='Tus reconocimientos';$('level-name').textContent='Explorador';$('level-number').textContent='Un nuevo comienzo';$('progress-ring').style.setProperty('--progress',0);$('progress-ring').setAttribute('aria-valuenow','0');$('course-count').textContent='';$('updated-at').textContent='APRENDE. AVANZA. DEJA HUELLA.';$('course-grid').innerHTML='<div class="empty-card"><h3>Tu pasaporte te espera</h3><p>Ingresa tu cédula para consultar tus cursos e insignias.</p></div>';$('badge-grid').innerHTML='<div class="empty-badges"><img src="assets/medal.svg" alt=""><p>Aquí brillarán tus logros.</p></div>';$('more-courses').hidden=true;$('more-badges').hidden=true;}
-function renderCourses(){
-  $('course-count').textContent=person.courses.length+' completados';
-  $('course-grid').innerHTML=person.courses.slice(0,coursesShown).map((c,i)=>`<button class="course-card" type="button" data-course="${i}" aria-label="Ver detalle de ${esc(c.title)}"><span class="course-icon" aria-hidden="true">${icon(c.title)}</span><span class="course-body"><h3>${esc(c.title)}</h3><span class="complete">⬟ Completado</span><span class="course-date">▣ ${esc(date(c.date))}<b>›</b></span></span></button>`).join('');
-  $('more-courses').hidden=coursesShown>=person.courses.length;
-  $('more-courses').textContent=`Ver más cursos (${person.courses.length-Math.min(coursesShown,person.courses.length)} restantes) →`;
+const ANIMALS=[['león',51,55],['elefante',128,55],['mono',208,55],['jirafa',286,55],['venado',51,134],['oso',128,134],['zorro',208,134],['koala',286,134],['panda',90,208],['pingüino',168,208],['búho',245,208]];
+const PAGE_SIZE=6;
+function randomAvatar(){
+  const previous=$('animal-avatar').dataset.animal;
+  let n=Math.floor(Math.random()*ANIMALS.length);
+  if(String(n)===previous)n=(n+1)%ANIMALS.length;
+  const [name,x,y]=ANIMALS[n];
+  $('animal-avatar').dataset.animal=String(n);
+  $('animal-avatar').style.backgroundPosition=`${(x-35)/(337-70)*100}% ${(y-35)/(280-70)*100}%`;
+  $('animal-avatar').setAttribute('aria-label','Avatar de '+name);
 }
-function renderBadges(){
-  $('badge-grid').innerHTML=person.badges.length?person.badges.slice(0,badgesShown).map((b,i)=>`<article class="badge-card" style="--i:${i%5}"><div class="badge-image"><img src="${esc(safeImage(b.image))}" alt="${esc(b.name)}" loading="lazy" referrerpolicy="no-referrer"></div><h3>${esc(b.name)}</h3><p>Aprendizaje que<br>deja huella</p><time datetime="${esc(b.date)}">▣ ${esc(date(b.date))}</time></article>`).join(''):'<div class="empty-badges"><img src="assets/medal.svg" alt=""><p>Tus cursos ya cuentan.<br><span>Aún no tienen insignias asociadas en el archivo.</span></p></div>';
-  $('badge-grid').querySelectorAll('img').forEach(img=>img.addEventListener('error',()=>{img.src='assets/medal.svg';img.alt+=' (imagen no disponible)';},{once:true}));
-  $('more-badges').hidden=badgesShown>=person.badges.length;
+function showSpread(open){
+  historyOpen=open;
+  document.querySelectorAll('[data-home]').forEach(page=>page.hidden=open);
+  $('history-left').hidden=!open;$('history-right').hidden=!open;$('spread-controls').hidden=!open;
+  $('passport').classList.toggle('history-open',open);
+}
+function cancelFlip(){flipVersion++;flipAnimation?.cancel();flipAnimation=null;document.querySelector('.turn-leaf')?.remove();$('passport').classList.remove('flipping');}
+function resetResults(){
+  cancelFlip();showSpread(false);person=null;publication=null;spread=0;
+  $('person-name').textContent='Tu historia está por descubrir';$('person-id').textContent='Consulta tu número de cédula';$('header-id').textContent='—';$('player-level').textContent='Jugador Arcade';
+  ['completed-count','badge-count'].forEach(id=>$(id).textContent='—');$('level-name').textContent='Explorador';$('level-number').textContent='Un nuevo comienzo';$('course-count').textContent='';$('updated-at').textContent='APRENDE. AVANZA. DEJA HUELLA.';
+  $('course-grid').innerHTML='<div class="empty-card"><h3>Tu pasaporte te espera</h3><p>Ingresa tu cédula para consultar tus cursos e insignias.</p></div>';
+  $('badge-grid').innerHTML='<div class="empty-badges"><img src="assets/medal.svg" alt=""><p>Aquí brillarán tus logros.</p></div>';$('more-history').hidden=true;
+  $('history-courses').replaceChildren();$('history-badges').replaceChildren();
+}
+function courseMarkup(c,i){return `<button class="course-card" type="button" data-course="${i}" aria-label="Ver detalle de ${esc(c.title)}"><span class="course-icon" aria-hidden="true">${icon(c.title)}</span><span class="course-body"><h3>${esc(c.title)}</h3><span class="complete">⬟ Completado</span><span class="course-date">▣ ${esc(date(c.date))}<b>›</b></span></span></button>`;}
+function badgeMarkup(b,i){return `<article class="badge-card" style="--i:${i%6}"><div class="badge-image"><img src="${esc(safeImage(b.image))}" alt="${esc(b.name)}" loading="lazy" referrerpolicy="no-referrer"></div><h3>${esc(b.name)}</h3><p>Aprendizaje que deja huella</p><time datetime="${esc(b.date)}">▣ ${esc(date(b.date))}</time></article>`;}
+function renderBadgesInto(target,badges,emptyMessage){
+  target.innerHTML=badges.length?badges.map(badgeMarkup).join(''):`<div class="empty-badges"><img src="assets/medal.svg" alt=""><p>${emptyMessage}</p></div>`;
+  target.querySelectorAll('img').forEach(img=>img.addEventListener('error',()=>{img.src='assets/medal.svg';img.alt+=' (imagen no disponible)';},{once:true}));
+}
+function totalSpreads(){return Math.max(1,Math.ceil(Math.max(person.courses.length,person.badges.length)/PAGE_SIZE));}
+function renderHistory(){
+  const start=spread*PAGE_SIZE;
+  $('history-person').textContent=person.name;
+  $('history-courses').innerHTML=person.courses.slice(start,start+PAGE_SIZE).map((c,i)=>courseMarkup(c,start+i)).join('')||'<div class="empty-card"><h3>Ya recorriste todos tus cursos</h3><p>Puedes volver a las hojas anteriores para verlos de nuevo.</p></div>';
+  renderBadgesInto($('history-badges'),person.badges.slice(start,start+PAGE_SIZE),person.badges.length?'Ya recorriste todas tus insignias.': 'Aún no hay insignias asociadas en el archivo.');
+  $('history-left-number').textContent=String(3+spread*2).padStart(2,'0');$('history-right-number').textContent=String(4+spread*2).padStart(2,'0');
+  $('spread-position').textContent=`Hojas ${3+spread*2}–${4+spread*2} · ${spread+1} / ${totalSpreads()}`;
+  $('previous-spread').disabled=spread===0;$('next-spread').disabled=spread>=totalSpreads()-1;
+}
+async function turnTo(open,index=0){
+  if(!person||$('passport').classList.contains('flipping'))return;
+  $('passport').classList.remove('turning');
+  const forward=open&&(!historyOpen||index>spread);
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const version=++flipVersion;
+  const source=historyOpen?$(forward?'history-right':'history-left'):document.querySelector('[data-home].right-page');
+  let leaf;
+  if(!reduced){
+    leaf=document.createElement('div');leaf.className='turn-leaf '+(forward?'forward':'backward');leaf.setAttribute('aria-hidden','true');leaf.inert=true;
+    const face=source.cloneNode(true);face.hidden=false;face.className+=' leaf-front';
+    face.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));face.removeAttribute('id');
+    const back=document.createElement('div');back.className='page leaf-back';back.innerHTML='<img src="assets/sello-jer.jpeg" alt=""><span>Tu historia sigue creciendo</span>';
+    leaf.append(face,back);$('passport').append(leaf);$('passport').classList.add('flipping');
+  }
+  spread=index;if(open)renderHistory();showSpread(open);
+  if(leaf){
+    flipAnimation=leaf.animate([{transform:'rotateY(0deg)',filter:'brightness(1)'},{transform:`rotateY(${forward?-80:80}deg)`,filter:'brightness(.83)',offset:.45},{transform:`rotateY(${forward?-180:180}deg)`,filter:'brightness(1)'}],{duration:1050,easing:'cubic-bezier(.35,.05,.2,1)',fill:'forwards'});
+    try{await flipAnimation.finished;}catch{ return; }
+    if(version!==flipVersion)return;
+    leaf.remove();flipAnimation=null;$('passport').classList.remove('flipping');
+  }
+  if(open)$('history-title').focus({preventScroll:true});else $('more-history').focus({preventScroll:true});
+  if(open)$('passport').scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
 }
 function render(){
-  const count=person.courses.length, pct=Math.min(100,Math.round(count/publication.courseCount*100));
+  const count=person.courses.length;
   let level=appConfig.levelThresholds.filter(n=>count>=n).length;level=Math.max(1,level);
+  showSpread(false);randomAvatar();
   $('person-name').textContent=person.name;$('person-id').textContent='Cédula: '+person.cedula;$('header-id').textContent=person.cedula;
-  $('player-level').textContent='Jugador Arcade';$('completed-count').textContent=count;$('catalog-count').textContent='de '+publication.courseCount+' cursos';
-  $('badge-count').textContent=person.badges.length;$('badge-total').textContent='de '+publication.badgeCount+' insignias';
+  $('player-level').textContent='Jugador Arcade';$('completed-count').textContent=count;$('badge-count').textContent=person.badges.length;
   $('level-name').textContent=appConfig.levelNames[level-1];$('level-number').textContent='Nivel '+level;
-  $('progress-ring').style.setProperty('--progress',pct);$('progress-ring').setAttribute('aria-valuenow',pct);$('progress-number').textContent=pct+'%';
   $('updated-at').textContent=publication.updatedAt?'ACTUALIZADO: '+date(publication.updatedAt.slice(0,10)):'VISTA DE DEMOSTRACIÓN';
-  coursesShown=5;badgesShown=5;renderCourses();renderBadges();
+  $('course-count').textContent=count+' completados';
+  $('course-grid').innerHTML=person.courses.slice(0,5).map(courseMarkup).join('');
+  renderBadgesInto($('badge-grid'),person.badges.slice(0,3),'Aún no hay insignias asociadas en el archivo.');
+  $('more-history').hidden=false;
   $('passport').classList.remove('turning');void $('passport').offsetWidth;$('passport').classList.add('turning');
 }
 async function search(event){
@@ -59,9 +116,19 @@ function loadDemo(){
 }
 $('search-form').addEventListener('submit',search);
 $('clear-search').addEventListener('click',()=>{sequence++;$('cedula').value='';resetResults();status('Tu próxima aventura comienza con lo que aprendes.');$('search-button').disabled=false;$('search-button').querySelector('span').textContent='Consultar progreso';$('passport').classList.remove('loading');$('cedula').focus();});
-$('more-courses').addEventListener('click',()=>{coursesShown+=10;renderCourses();});
-$('more-badges').addEventListener('click',()=>{badgesShown+=10;renderBadges();});
+$('more-history').addEventListener('click',()=>turnTo(true,0));
+$('back-summary').addEventListener('click',()=>turnTo(false));
+$('previous-spread').addEventListener('click',()=>{if(spread>0)turnTo(true,spread-1);});
+$('next-spread').addEventListener('click',()=>{if(person&&spread<totalSpreads()-1)turnTo(true,spread+1);});
+document.addEventListener('keydown',e=>{
+  if(!historyOpen||document.querySelector('dialog[open]')||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+  if(e.key==='ArrowRight'&&spread<totalSpreads()-1){e.preventDefault();turnTo(true,spread+1);}
+  if(e.key==='ArrowLeft'&&spread>0){e.preventDefault();turnTo(true,spread-1);}
+  if(e.key==='Escape'){e.preventDefault();turnTo(false);}
+});
+document.querySelectorAll('.topbar nav a').forEach(link=>link.addEventListener('click',()=>{if(historyOpen){cancelFlip();showSpread(false);}}));
 $('help-button').addEventListener('click',()=>$('help-dialog').showModal());
 document.querySelectorAll('.dialog-close').forEach(button=>button.addEventListener('click',()=>button.closest('dialog').close()));
-$('course-grid').addEventListener('click',e=>{const button=e.target.closest('[data-course]');if(!button||!person)return;const c=person.courses[Number(button.dataset.course)];$('course-details').innerHTML=`<h2>${esc(c.title)}</h2><span class="complete">✓ Completado · Aprobación 100 %</span><p style="margin-top:20px">Finalización: ${esc(date(c.date))}</p><p>Código de capacitación: ${esc(c.id)}</p><p>${c.image?'Este curso tiene una insignia asociada.':'El archivo no tiene una insignia asociada a este curso.'}</p>`;$('course-dialog').showModal();});
+$('passport').addEventListener('click',e=>{const button=e.target.closest('[data-course]');if(!button||!person)return;const c=person.courses[Number(button.dataset.course)];$('course-details').innerHTML=`<h2>${esc(c.title)}</h2><span class="complete">✓ Completado · Aprobación 100 %</span><p style="margin-top:20px">Finalización: ${esc(date(c.date))}</p><p>Código de capacitación: ${esc(c.id)}</p><p>${c.image?'Este curso tiene una insignia asociada.':'El archivo no tiene una insignia asociada a este curso.'}</p>`;$('course-dialog').showModal();});
+randomAvatar();
 if(demo){$('demo-notice').hidden=false;loadDemo();status('Demostración con datos ficticios; no consulta Firebase.');}
