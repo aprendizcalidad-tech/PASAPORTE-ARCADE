@@ -10,15 +10,16 @@ const date=s=>s ? new Intl.DateTimeFormat('es-CO',{day:'2-digit',month:'short',y
 function safeImage(s){return /^https:\/\/[^\s]+$/i.test(String(s)) || s==='assets/medal.svg' ? s : 'assets/medal.svg';}
 function icon(title){const t=title.toLowerCase();return /emergencia|evacua/.test(t)?'🏃':/salud|pausa|bienestar/.test(t)?'♥':/riesgo|prevenci/.test(t)?'⚠':/epp|protecci/.test(t)?'🥽':/seguridad/.test(t)?'⛑':/tecnol|digital|sistema/.test(t)?'▥':'📘';}
 function status(message,error=false){$('search-status').textContent=message;$('search-status').classList.toggle('error',error);}
-const ANIMALS=[['león',51,55],['elefante',128,55],['mono',208,55],['jirafa',286,55],['venado',51,134],['oso',128,134],['zorro',208,134],['koala',286,134],['panda',90,208],['pingüino',168,208],['búho',245,208]];
+const ANIMALS=[['oso',95,45],['gato',545,45],['perro',991,45],['conejo',95,529],['panda',545,529],['mapache',991,529]];
 const PAGE_SIZE=6;
 function randomAvatar(){
-  const previous=$('animal-avatar').dataset.animal;
-  let n=Math.floor(Math.random()*ANIMALS.length);
-  if(String(n)===previous)n=(n+1)%ANIMALS.length;
+  let previous=-1;
+  try{const saved=sessionStorage.getItem('passportPreviousAnimal');if(saved!==null&&/^[0-5]$/.test(saved))previous=Number(saved);}catch{}
+  const n=previous<0?Math.floor(Math.random()*ANIMALS.length):(previous+1+Math.floor(Math.random()*(ANIMALS.length-1)))%ANIMALS.length;
+  try{sessionStorage.setItem('passportPreviousAnimal',String(n));}catch{}
   const [name,x,y]=ANIMALS[n];
   $('animal-avatar').dataset.animal=String(n);
-  $('animal-avatar').style.backgroundPosition=`${(x-35)/(337-70)*100}% ${(y-35)/(280-70)*100}%`;
+  $('animal-avatar').style.backgroundPosition=`${x/(1536-450)*100}% ${y/(1024-450)*100}%`;
   $('animal-avatar').setAttribute('aria-label','Avatar de '+name);
 }
 function showSpread(open){
@@ -80,7 +81,7 @@ async function turnTo(open,index=0){
 function render(){
   const count=person.courses.length;
   let level=appConfig.levelThresholds.filter(n=>count>=n).length;level=Math.max(1,level);
-  showSpread(false);randomAvatar();
+  showSpread(false);
   $('person-name').textContent=person.name;$('person-id').textContent='Cédula: '+person.cedula;$('header-id').textContent=person.cedula;
   $('player-level').textContent='Talento JER';$('completed-count').textContent=count;$('badge-count').textContent=person.badges.length;
   $('level-name').textContent=count>=600?'Leyenda del conocimiento':count>=75?'Maestro del conocimiento':appConfig.levelNames[level-1];$('level-number').textContent='Nivel '+level;

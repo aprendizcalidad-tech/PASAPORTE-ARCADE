@@ -22,7 +22,7 @@
 .badge-card h3{font-size:13px}
 .jer-stamp{border:0;border-radius:0;box-shadow:none;width:130px;height:130px;opacity:.85;mix-blend-mode:multiply;transform:rotate(12deg)}
 .jer-stamp img{width:100%;height:100%;object-fit:contain}
-.animal-avatar{width:110px;height:110px;aspect-ratio:1;border-radius:50%;background-image:url('assets/animales-avatar.jpeg');background-size:481.4286% 400%;background-repeat:no-repeat;background-position:6.015% 9.524%;box-shadow:0 4px 0 #abc8d64d,0 8px 20px #34536720;border:3px solid #fff;display:block}
+.animal-avatar{width:110px;height:110px;aspect-ratio:1;border-radius:50%;background-image:url('assets/animales-perfil.png');background-size:341.333333% 227.555556%;background-repeat:no-repeat;background-position:8.747698% 7.839721%;box-shadow:0 4px 0 #abc8d64d,0 8px 20px #34536720;border:3px solid #fff;display:block}
 .passport-more{align-self:flex-end;margin-top:18px;font-size:14px;gap:18px;min-height:46px;padding:12px 20px}
 .history-heading{margin:8px 0 24px}
 .history-heading h2{font-family:Inter,Arial,sans-serif;font-size:28px;letter-spacing:-1px;display:flex;align-items:center;gap:12px;margin:0 0 10px}
