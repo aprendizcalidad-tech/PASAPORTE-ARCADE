@@ -54,29 +54,31 @@ function renderHistory(){
   $('previous-spread').disabled=spread===0;$('next-spread').disabled=spread>=totalSpreads()-1;
 }
 async function turnTo(open,index=0){
-  if(!person||$('passport').classList.contains('flipping'))return;
-  $('passport').classList.remove('turning');
+  const book=$('passport');
+  if(!person||book.classList.contains('flipping'))return;
+  const wasOpen=historyOpen;
   const forward=open&&(!historyOpen||index>spread);
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const version=++flipVersion;
-  const source=historyOpen?$(forward?'history-right':'history-left'):document.querySelector('[data-home].right-page');
-  let leaf;
-  if(!reduced){
-    leaf=document.createElement('div');leaf.className='turn-leaf '+(forward?'forward':'backward');leaf.setAttribute('aria-hidden','true');leaf.inert=true;
-    const face=source.cloneNode(true);face.hidden=false;face.className+=' leaf-front';
-    face.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));face.removeAttribute('id');
-    const back=document.createElement('div');back.className='page leaf-back';back.innerHTML='<img src="assets/sello-jer.jpeg" alt=""><span>Tu historia sigue creciendo</span>';
-    leaf.append(face,back);$('passport').append(leaf);$('passport').classList.add('flipping');
-  }
-  spread=index;if(open)renderHistory();showSpread(open);
-  if(leaf){
-    flipAnimation=leaf.animate([{transform:'rotateY(0deg)',filter:'brightness(1)'},{transform:`rotateY(${forward?-80:80}deg)`,filter:'brightness(.83)',offset:.45},{transform:`rotateY(${forward?-180:180}deg)`,filter:'brightness(1)'}],{duration:1050,easing:'cubic-bezier(.35,.05,.2,1)',fill:'forwards'});
-    try{await flipAnimation.finished;}catch{ return; }
+  book.classList.remove('turning');book.classList.add('flipping');
+  const animate=async frames=>{
+    flipAnimation=book.animate(frames,{duration:140,easing:'ease-out',fill:'forwards'});
+    await flipAnimation.finished;
+  };
+  try{
+    // Animate the actual spread; cloned 3D pages exposed mirrored descendants.
+    if(!reduced)await animate([{opacity:1,transform:'translateX(0)'},{opacity:0,transform:`translateX(${forward?-6:6}px)`}]);
     if(version!==flipVersion)return;
-    leaf.remove();flipAnimation=null;$('passport').classList.remove('flipping');
+    spread=index;if(open)renderHistory();showSpread(open);
+    flipAnimation?.cancel();flipAnimation=null;
+    if(!reduced)await animate([{opacity:0,transform:`translateX(${forward?6:-6}px)`},{opacity:1,transform:'translateX(0)'}]);
+    if(version!==flipVersion)return;
+  }catch{return;}
+  finally{
+    if(version===flipVersion){flipAnimation?.cancel();flipAnimation=null;book.classList.remove('flipping');}
   }
   if(open)$('history-title').focus({preventScroll:true});else $('more-history').focus({preventScroll:true});
-  if(open)$('passport').scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
+  if(open&&!wasOpen)book.scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
 }
 function render(){
   const count=person.courses.length;
