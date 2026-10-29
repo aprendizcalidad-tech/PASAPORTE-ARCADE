@@ -1,1 +1,20 @@
-{"indexes":[],"fieldOverrides":[{"collectionGroup":"people","fieldPath":"payload","indexes":[]}]}
+{
+  "indexes": [],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "people",
+      "fieldPath": "payload",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "public",
+      "fieldPath": "courses",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "managedPeople",
+      "fieldPath": "courses",
+      "indexes": []
+    }
+  ]
+}

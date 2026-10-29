@@ -140,3 +140,7 @@
 @keyframes travelerIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 @media(max-width:520px){.route-traveler{width:9%;min-width:30px;max-width:42px}.route-replay{font-size:8px;right:8px;bottom:6px;padding:5px 7px}.route-map-note{padding-right:115px}}
 @media(prefers-reduced-motion:reduce){.traveler-body,.traveler-body img{animation:none!important;transition:none!important}.route-traveler{will-change:auto}}
+
+
+/* Identidad JER */
+.brand-logo{width:76px;height:76px;object-fit:contain;flex-shrink:0;border-radius:50%;background:#fff;padding:3px}.topbar{gap:20px}.topbar .brand{font-size:clamp(15px,1.35vw,23px)}.topbar nav{gap:18px;padding-left:20px}.route-intro h1 span{font-size:.7em}@media(max-width:700px){.brand-logo{width:53px;height:53px}.topbar .brand{font-size:16px}}

@@ -4,7 +4,7 @@ export const ROUTE_GOAL=600;
 export const ROUTE_MILESTONES=[
   {name:'Portal de inicio',target:1,subtitle:'Tu aventura comenzó aquí',x:25,y:86},
   {name:'Isla Explorador',target:5,subtitle:'Primeros aprendizajes',x:36,y:60},
-  {name:'Ciudad Arcade',target:15,subtitle:'Nuevos horizontes',x:57,y:75},
+  {name:'Ciudad del Saber',target:15,subtitle:'Nuevos horizontes',x:57,y:75},
   {name:'Fortaleza del conocimiento',target:30,subtitle:'Grandes logros',x:87,y:70},
   {name:'Torre Maestra',target:75,subtitle:'Tu conocimiento te eleva',x:68,y:28},
   {name:'Templo Leyenda',target:ROUTE_GOAL,subtitle:'600 aprendizajes',x:92,y:29}

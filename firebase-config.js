@@ -10,7 +10,7 @@ export const firebaseConfig = {
 };
 export const appConfig = {
   gasUrl: 'https://script.google.com/macros/s/AKfycbw6yjadO3a8DXp3gL0952FKXduv9KFTcZ1Ukws-ngH408VKgShCSjfKaAJY_Ob5pQva/exec',
-  title: 'Pasaporte Mundo Arcade',
+  title: 'Pasaporte del Conocimiento JER',
   // Metas de gamificación editoriales, no categorías que existan en el Excel.
   levelThresholds: [1, 5, 15, 30, 50],
   levelNames: ['Explorador', 'Aprendiz', 'Aventurero', 'Avanzado', 'Experto']

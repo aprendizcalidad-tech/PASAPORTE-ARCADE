@@ -1,10 +1,11 @@
 import {connect} from './firebase.js';
 import {appConfig} from '../firebase-config.js';
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let catalogState=null,personState=null,managementBusy=false;
 let services,user=null,parsed=null,fingerprint='',currentJob=null,busy=false,worker=null,fileSequence=0,pollTimer=null;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function message(text,error=false){$('admin-status').textContent=text;$('admin-status').classList.toggle('error',error);}
-function controls(value){busy=value;['import-button','drive-button','excel','cancel-job','logout'].forEach(id=>$(id).disabled=value);}
+function controls(value){busy=value;['import-button','catalog-from-excel','drive-button','excel','cancel-job','logout'].forEach(id=>$(id).disabled=value);}
 async function api(action,data={},retry=true){
   if(!user)throw new Error('Inicia sesión de nuevo.');
   if(!/^https:\/\/script.google.com\/macros\/s\/[\w-]+\/exec$/.test(appConfig.gasUrl))throw new Error('Configura gasUrl con la URL /exec de Apps Script.');
@@ -60,7 +61,7 @@ $('excel').addEventListener('change',async()=>{
 });
 function savedImport(){try{return JSON.parse(localStorage.getItem('arcadeImport')||'null');}catch{return null;}}
 $('import-button').addEventListener('click',async()=>{
-  if(!parsed||busy||parsed.report.invalid)return;controls(true);
+  if(!parsed||busy||managementBusy||parsed.report.invalid)return;controls(true);
   try{
     const saved=savedImport();
     const session=saved?.fingerprint===fingerprint&&saved?.uid===user.uid?saved:{fingerprint,uid:user.uid,id:'web-'+crypto.randomUUID()};
@@ -76,13 +77,14 @@ $('import-button').addEventListener('click',async()=>{
   }catch(e){if(/cancelada/.test(e.message))localStorage.removeItem('arcadeImport');message(e.message+' Si la carga se interrumpió, selecciona el mismo archivo y pulsa Importar y publicar para reanudar.',true);}
   finally{controls(false);}
 });
-$('drive-button').addEventListener('click',async()=>{controls(true);try{await api('drive',{},false);await refresh(false);message('Sincronización en cola. El activador continuará en segundo plano; puedes cerrar esta página.');}catch(e){message(e.message,true);}finally{controls(false);}});
+$('drive-button').addEventListener('click',async()=>{if(managementBusy)return;controls(true);try{await api('drive',{},false);await refresh(false);message('Sincronización en cola. El activador continuará en segundo plano; puedes cerrar esta página.');}catch(e){message(e.message,true);}finally{controls(false);}});
 $('refresh-status').addEventListener('click',()=>refresh());
 $('cancel-job').addEventListener('click',async()=>{if(!currentJob||!confirm('¿Cancelar la importación pendiente? El pasaporte publicado actualmente se conserva.'))return;controls(true);try{await api('cancel',{importId:currentJob.id});localStorage.removeItem('arcadeImport');await refresh(false);message('Importación cancelada.');}catch(e){message(e.message,true);}finally{controls(false);}});
+initManagement();
 try{
   services=await connect();await services.authApi.setPersistence(services.auth,services.authApi.browserSessionPersistence);
   services.authApi.onAuthStateChanged(services.auth,async account=>{
-    user=null;$('dashboard').hidden=true;$('login-view').hidden=false;clearTimeout(pollTimer);
+    user=null;resetManagement();$('dashboard').hidden=true;$('login-view').hidden=false;clearTimeout(pollTimer);
     if(!account){message('Ingresa con una cuenta administradora.');return;}
     try{
       const role=await services.storeApi.getDocFromServer(services.storeApi.doc(services.db,'admins',account.uid));
@@ -91,3 +93,73 @@ try{
     }catch(e){message(e.message,true);}
   });
 }catch(e){message(e.message,true);$('login-submit').disabled=true;$('reset-password').disabled=true;}
+
+
+function resetManagement(){catalogState=null;personState=null;$('person-form').hidden=true;$('course-fields').disabled=true;$('catalog-list').replaceChildren();$('course-form').reset();$('course-id').readOnly=false;$('person-form').reset();$('badge-preview').hidden=true;$('catalog-status').textContent='';}
+async function manage(task){
+  if(managementBusy||busy||!user)return;
+  managementBusy=true;
+  const uid=user.uid;
+  document.querySelectorAll('.management-card button').forEach(b=>b.disabled=true);
+  try{await task(()=>user?.uid===uid);}catch(e){message(e.message,true);}
+  finally{managementBusy=false;document.querySelectorAll('.management-card button').forEach(b=>b.disabled=false);}
+}
+function renderCatalog(){
+  const courses=catalogState?.courses||[],q=$('catalog-search').value.trim().toLocaleLowerCase('es');
+  const filtered=courses.filter(c=>(c.id+' '+c.title).toLocaleLowerCase('es').includes(q));
+  $('catalog-list').innerHTML=filtered.slice(0,100).map(c=>`<button class="catalog-item" type="button" data-edit-course="${esc(c.id)}"><b>${esc(c.id)}</b> ${esc(c.title)} <small>${c.active?'Activo':'Archivado'}</small></button>`).join('');
+  $('catalog-status').textContent=`${courses.length} cursos gestionados · ${filtered.length} coincidencias${filtered.length>100?' (se muestran 100; afina la búsqueda)':''}. Para actualizar un curso del Excel, usa su mismo ID.`;
+  $('completion-course').innerHTML='<option value="">Selecciona un curso</option>'+courses.filter(c=>c.active).map(c=>`<option value="${esc(c.id)}">${esc(c.id)} · ${esc(c.title)}</option>`).join('');
+}
+function previewBadge(){
+  const url=$('course-image').value.trim(),img=$('badge-preview');img.hidden=true;$('badge-preview-status').textContent='';
+  if(!url)return;
+  try{if(new URL(url).protocol!=='https:')return;}catch{return;}
+  img.onload=()=>{img.hidden=false;$('badge-preview-status').textContent='';};img.onerror=()=>{img.hidden=true;$('badge-preview-status').textContent='No se pudo cargar la imagen. Revisa que el enlace sea público y directo.';};img.referrerPolicy='no-referrer';img.src=url;
+}
+function renderManual(){
+  $('manual-courses').innerHTML=personState.courses.length?personState.courses.map((c,i)=>`<div class="manual-row"><span>${esc(c.id)} · ${esc(c.title)} · ${esc(c.date)}</span><button type="button" class="text-button danger" data-remove-completion="${i}">Retirar de la lista</button></div>`).join(''):'<p>No hay aprobaciones manuales.</p>';
+}
+function initManagement(){
+  $('catalog-from-excel').addEventListener('click',()=>manage(async current=>{
+    if(!parsed||parsed.report.invalid)throw new Error('Primero selecciona y valida el Excel completo.');
+    const data=await api('seedCatalog',{courses:parsed.catalogCourses},false);
+    if(!current())return;catalogState=data;renderCatalog();$('course-fields').disabled=false;
+    message('Cursos añadidos al catálogo. Los cursos que ya estaban gestionados conservan sus nombres e insignias. No se publicaron personas.');
+  }));
+  $('load-catalog').addEventListener('click',()=>manage(async current=>{const data=await api('catalog',{},false);if(!current())return;catalogState=data;renderCatalog();$('course-fields').disabled=false;message('Catálogo cargado. Puedes crear cursos o editar los existentes.');}));
+  $('catalog-search').addEventListener('input',renderCatalog);
+  $('catalog-list').addEventListener('click',e=>{
+    const button=e.target.closest('[data-edit-course]');if(!button||managementBusy)return;
+    const c=catalogState.courses.find(c=>c.id===button.dataset.editCourse);
+    $('course-id').value=c.id;$('course-id').readOnly=true;$('course-title').value=c.title;$('course-badge').value=c.badgeName;$('course-image').value=c.image;$('course-active').value=String(c.active);previewBadge();$('course-title').focus();
+  });
+  $('new-course').addEventListener('click',()=>{$('course-form').reset();$('course-id').readOnly=false;previewBadge();$('course-id').focus();});
+  $('course-image').addEventListener('change',previewBadge);
+  $('course-form').addEventListener('submit',e=>{e.preventDefault();if(!catalogState)return;manage(async current=>{
+    const id=$('course-id').value.trim();
+    if(!$('course-id').readOnly&&catalogState.courses.some(c=>c.id===id))throw new Error('Ese ID ya existe. Selecciónalo en el catálogo para editarlo.');
+    const data=await api('saveCourse',{revision:catalogState.revision,course:{id,title:$('course-title').value.trim(),badgeName:$('course-badge').value.trim(),image:$('course-image').value.trim(),active:$('course-active').value==='true'}},false);
+    if(!current())return;catalogState=data;$('course-id').readOnly=true;renderCatalog();message('Curso guardado. Su nombre e insignia se actualizarán al consultar los pasaportes.');
+  });});
+  $('person-search').addEventListener('submit',e=>{e.preventDefault();if(personState&&!confirm('¿Descartar los cambios sin guardar y buscar otra persona?'))return;manage(async current=>{
+    const cedula=$('person-lookup').value.trim(),data=await api('person',{cedula},false);if(!current())return;
+    const p=data.managed;personState={cedula,revision:p?.revision||0,courses:(p?.courses||[]).map(c=>({...c}))};
+    $('person-heading').textContent='Cédula: '+cedula;$('edit-name').value=p?.name||data.base?.name||'';$('person-active').value=String(p?.active!==false);
+    $('base-history').textContent=`${data.base?.courses.length||0} cursos en el Excel publicado. Estos se conservan y se combinan con las aprobaciones manuales.`;
+    $('person-form').hidden=false;renderManual();message(data.base||p?'Persona cargada.':'Cédula nueva. Completa el nombre y guarda su pasaporte.');
+  });});
+  $('add-completion').addEventListener('click',()=>{
+    if(!personState||managementBusy)return;
+    const id=$('completion-course').value,course=catalogState?.courses.find(c=>c.id===id&&c.active),date=$('completion-date').value;
+    if(!course||!date){message('Selecciona un curso activo y su fecha de aprobación.',true);return;}
+    if(personState.courses.some(c=>c.id===id)){message('Ese curso ya está en la lista manual. Retíralo antes de corregir su fecha.',true);return;}
+    personState.courses.push({...course,date,approval:100});renderManual();message('Aprobación preparada. Guarda la persona para publicarla.');
+  });
+  $('manual-courses').addEventListener('click',e=>{const b=e.target.closest('[data-remove-completion]');if(b&&!managementBusy){personState.courses.splice(Number(b.dataset.removeCompletion),1);renderManual();}});
+  $('cancel-person').addEventListener('click',()=>{if(confirm('¿Descartar los cambios de esta persona?')){personState=null;$('person-form').hidden=true;}});
+  $('person-form').addEventListener('submit',e=>{e.preventDefault();if(!personState)return;manage(async current=>{
+    const data=await api('savePerson',{revision:personState.revision,person:{cedula:personState.cedula,name:$('edit-name').value.trim(),active:$('person-active').value==='true',courses:personState.courses.map(c=>({id:c.id,date:c.date}))}},false);
+    if(!current())return;personState={...data};renderManual();message('Persona guardada. Los cambios ya están disponibles al consultar su cédula.');
+  });});
+}

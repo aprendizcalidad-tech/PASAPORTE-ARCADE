@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#061b32"><meta name="description" content="Consulta tus cursos e insignias en tu Pasaporte Mundo Arcade."><title>Pasaporte Mundo Arcade</title><link rel="icon" href="assets/medal.svg" type="image/svg+xml"><link rel="stylesheet" href="styles.css?v=4"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#061b32"><meta name="description" content="Consulta tus cursos e insignias en tu Pasaporte del Conocimiento JER."><title>Pasaporte del Conocimiento JER</title><link rel="icon" href="assets/sello-jer.jpeg" type="image/jpeg"><link rel="stylesheet" href="styles.css?v=5"></head>
 <body>
 
 <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -12,7 +12,7 @@
 <symbol id="i-home" viewBox="0 0 24 24"><path d="m2 11 10-9 10 9M5 9v13h5v-8h4v8h5V9"/></symbol>
 <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4" ry="10"/><path d="M2 12h20M4 6h16M4 18h16"/></symbol>
 </defs></svg>
-<header class="topbar"><a class="brand" href="./" aria-label="Pasaporte Mundo Arcade, inicio"><span class="planet"><svg><use href="#i-globe"/></svg><span class="orbit"></span><b>✦</b></span><span>PASAPORTE<strong>MUNDO ARCADE</strong></span></a>
+<header class="topbar"><a class="brand" href="./" aria-label="Pasaporte del Conocimiento JER, inicio"><img class="brand-logo" src="assets/sello-jer.jpeg" alt="JER · Une tus sueños"><span>PASAPORTE<strong>DEL CONOCIMIENTO · JER</strong></span></a>
 <nav aria-label="Navegación principal"><a href="#inicio" class="active"><svg><use href="#i-home"/></svg>Inicio</a><a href="#perfil"><svg><use href="#i-user"/></svg>Mi Pasaporte</a><a href="#cursos"><svg><use href="#i-book"/></svg>Cursos</a><a href="https://fycjer.github.io/invictustrainer/"><svg><use href="#i-medal"/></svg>JUEGOS</a><a href="#ruta"><svg><use href="#i-chart"/></svg>Progreso</a></nav>
 <div class="nav-actions"><a class="login-link" href="admin/"><svg><use href="#i-user"/></svg>Iniciar sesión</a><button class="help-button" id="help-button" type="button">ⓘ <span>Ayuda</span></button></div></header>
 <nav class="route-mobile-tabs" aria-label="Vistas del pasaporte"><a href="#perfil">Mi pasaporte</a><a href="#ruta">Mi progreso ✦</a></nav>
@@ -20,8 +20,8 @@
 <div id="demo-notice" class="demo-notice" hidden>VISTA DE DEMOSTRACIÓN · DATOS FICTICIOS <a href="./">Salir del demo</a></div>
 <div class="book-wrap"><div class="book" id="passport">
 <section data-home class="page left-page" aria-labelledby="main-title">
-<div class="page-kicker"><span><svg><use href="#i-globe"/></svg> PASAPORTE MUNDO ARCADE</span><span>TU HISTORIA DE APRENDIZAJE ✈</span></div>
-<div class="intro"><div class="passport-stamp" aria-hidden="true"><svg><use href="#i-globe"/></svg><span>APRENDER<br>HOY<br>CONSTRUYE<br>MAÑANA</span></div><h1 id="main-title">Tu pasaporte<br><span>de aprendizaje</span></h1><p>Consulta tu progreso, revisa los cursos que has completado<br class="wide-only"> y las insignias que has obtenido en Mundo Arcade.<br>Ingresa tu número de cédula para ver tu historial de aprendizaje.</p></div>
+<div class="page-kicker"><span><svg><use href="#i-globe"/></svg> PASAPORTE DEL CONOCIMIENTO JER</span><span>TU HISTORIA DE APRENDIZAJE ✈</span></div>
+<div class="intro"><div class="passport-stamp" aria-hidden="true"><svg><use href="#i-globe"/></svg><span>APRENDER<br>HOY<br>CONSTRUYE<br>MAÑANA</span></div><h1 id="main-title">Tu pasaporte<br><span>de aprendizaje</span></h1><p>Consulta tu progreso, revisa los cursos que has completado<br class="wide-only"> y las insignias que has obtenido en JER.<br>Ingresa tu número de cédula para ver tu historial de aprendizaje.</p></div>
 <form class="search-panel" id="search-form"><span class="id-icon" aria-hidden="true">▣</span><div class="search-fields"><label for="cedula">Ingresa tu número de cédula</label><div class="input-wrap"><input id="cedula" name="cedula" type="text" inputmode="numeric" autocomplete="off" pattern="[0-9]{1,20}" maxlength="20" placeholder="Tu número de cédula" required aria-describedby="search-status"><button id="clear-search" type="button" aria-label="Limpiar consulta">×</button></div><button class="primary" type="submit" id="search-button"><svg><use href="#i-search"/></svg><span>Consultar progreso</span></button></div></form>
 <p id="search-status" class="status-line" role="status" aria-live="polite">Tu próxima aventura comienza con lo que aprendes.</p>
 <section id="cursos" class="courses-section"><div class="section-heading"><h2><svg><use href="#i-book"/></svg>Cursos realizados</h2><span id="course-count" class="small-caption"></span></div><div class="course-grid" id="course-grid"><div class="empty-card"><svg><use href="#i-book"/></svg><h3>Cada aprendizaje cuenta</h3><p>Consulta tu cédula para descubrir los cursos que has completado.</p></div></div></section>
@@ -30,7 +30,7 @@
 <div class="spine" aria-hidden="true"></div>
 <section data-home class="page right-page" aria-label="Mi pasaporte de aprendizaje">
 <div class="page-kicker right-kicker"><span class="my-passport"><svg><use href="#i-user"/></svg>Mi Pasaporte</span><span>ID DE APRENDIZAJE: <b id="header-id">—</b><i class="barcode" aria-hidden="true"></i></span></div>
-<div class="profile-card" id="perfil"><span class="avatar animal-avatar" id="animal-avatar" role="img" aria-label="Avatar de león"></span><div class="profile-info"><p class="eyebrow">BIENVENIDO A TU AVENTURA</p><h2 id="person-name">Tu historia está por descubrir</h2><p id="person-id">Consulta tu número de cédula</p><span class="player-badge">✦ <span id="player-level">Jugador Arcade</span></span><blockquote>“El conocimiento nos mueve.”</blockquote></div><div class="round-stamp jer-stamp"><img src="assets/sello-jer.jpeg" alt="JER · Une tus sueños"></div></div>
+<div class="profile-card" id="perfil"><span class="avatar animal-avatar" id="animal-avatar" role="img" aria-label="Avatar de león"></span><div class="profile-info"><p class="eyebrow">BIENVENIDO A TU AVENTURA</p><h2 id="person-name">Tu historia está por descubrir</h2><p id="person-id">Consulta tu número de cédula</p><span class="player-badge">✦ <span id="player-level">Talento JER</span></span><blockquote>“El conocimiento nos mueve.”</blockquote></div><div class="round-stamp jer-stamp"><img src="assets/sello-jer.jpeg" alt="JER · Une tus sueños"></div></div>
 <section id="progreso"><div class="section-heading"><h2><svg class="teal"><use href="#i-chart"/></svg>Mi progreso</h2><a class="route-launch" href="#ruta">Explorar mi ruta →</a></div>
 <div class="metrics"><article class="metric mint"><h3>◆ &nbsp; Cursos<br>completados</h3><strong id="completed-count">—</strong></article><article class="metric lilac"><h3>✦ &nbsp; Insignias<br>obtenidas</h3><strong id="badge-count">—</strong></article><article class="metric blue"><h3>▥ &nbsp; Nivel</h3><strong class="level-text" id="level-name">Explorador</strong><p id="level-number">Un nuevo comienzo</p></article></div></section>
 <section id="insignias"><div class="section-heading"><h2><svg><use href="#i-medal"/></svg>Insignias obtenidas</h2><span class="small-caption">TU ESFUERZO TAMBIÉN DEJA HUELLA ★</span></div><div class="badge-grid" id="badge-grid"><div class="empty-badges"><img src="assets/medal.svg" alt=""><p>Aquí brillarán tus logros.<br><span>Cada curso abre un nuevo horizonte.</span></p></div></div></section>
@@ -54,21 +54,21 @@
 <button type="button" id="back-summary">← Volver a mi pasaporte</button>
 <div class="spread-pagination"><button type="button" id="previous-spread" aria-label="Hojas anteriores">← Anterior</button><span id="spread-position" role="status" aria-live="polite"></span><button type="button" id="next-spread" aria-label="Hojas siguientes">Siguiente →</button></div>
 </nav></div>
-<p class="site-note">Mismas personas. Más horizontes. <span>✦</span> Pasaporte Mundo Arcade <a href="?demo=1">Ver demostración</a></p>
+<p class="site-note">Mismas personas. Más horizontes. <span>✦</span> Pasaporte del Conocimiento JER <a href="?demo=1">Ver demostración</a></p>
 </main>
 
 <main id="route-view" class="route-view" hidden aria-labelledby="route-title">
 <div class="route-top">
 <section class="route-world" aria-label="Mapa de tu ruta de aprendizaje">
 <div class="world-art" aria-hidden="true"></div><div class="world-shade" aria-hidden="true"></div>
-<div class="route-intro"><h1 id="route-title" tabindex="-1">TU RUTA <span>ARCADE</span></h1><h2>Cada aprendizaje expande tu mundo.</h2><p>Explora tu historia de aprendizaje y descubre<br class="wide-only"> hasta dónde te han llevado tus logros.<br>Cada curso completado construye un nuevo<br class="wide-only"> camino, nuevas oportunidades y un futuro<br class="wide-only"> más grande.</p><div class="route-motto"><svg><use href="#i-globe"/></svg><span>APRENDER TAMBIÉN<br>TE LLEVA MUY LEJOS.</span></div></div>
+<div class="route-intro"><h1 id="route-title" tabindex="-1">TU RUTA <span>DEL CONOCIMIENTO</span></h1><h2>Cada aprendizaje expande tu mundo.</h2><p>Explora tu historia de aprendizaje y descubre<br class="wide-only"> hasta dónde te han llevado tus logros.<br>Cada curso completado construye un nuevo<br class="wide-only"> camino, nuevas oportunidades y un futuro<br class="wide-only"> más grande.</p><div class="route-motto"><svg><use href="#i-globe"/></svg><span>APRENDER TAMBIÉN<br>TE LLEVA MUY LEJOS.</span></div></div>
 <div id="route-traveler" class="route-traveler" hidden role="img" aria-label="Tu personaje en la ruta"><span class="traveler-shadow" aria-hidden="true"></span><span class="traveler-body"><img src="assets/ruta-arcade-personaje.png" alt="" aria-hidden="true" decoding="async"></span></div>
 <div id="route-nodes" class="route-nodes"></div>
 <div class="route-map-note" id="route-map-note" role="status"></div><button class="route-replay" id="route-replay" type="button" hidden>Recorrer mi ruta ↻</button>
 </section>
 <aside class="route-passport" aria-label="Mi progreso en la ruta">
 <div class="route-passport-kicker"><h2><svg><use href="#i-user"/></svg>Mi Pasaporte</h2><span>ID DE APRENDIZAJE: <b id="route-id">—</b><i class="barcode" aria-hidden="true"></i></span></div>
-<div class="route-profile"><span class="animal-avatar route-avatar" id="route-avatar" role="img" aria-label="Avatar animal"></span><div class="route-profile-info"><h2 id="route-name">Tu aventura te espera</h2><p id="route-cedula">Consulta tu cédula para comenzar</p><span class="player-badge">★ &nbsp; Jugador Arcade</span><blockquote>“El conocimiento nos mueve”</blockquote></div><img class="route-stamp" src="assets/sello-jer.jpeg" alt="JER · Une tus sueños"></div>
+<div class="route-profile"><span class="animal-avatar route-avatar" id="route-avatar" role="img" aria-label="Avatar animal"></span><div class="route-profile-info"><h2 id="route-name">Tu aventura te espera</h2><p id="route-cedula">Consulta tu cédula para comenzar</p><span class="player-badge">★ &nbsp; Talento JER</span><blockquote>“El conocimiento nos mueve”</blockquote></div><img class="route-stamp" src="assets/sello-jer.jpeg" alt="JER · Une tus sueños"></div>
 <div class="section-heading"><h2><svg class="teal"><use href="#i-chart"/></svg>Mi progreso en la ruta</h2><span class="small-caption">PEQUEÑOS PASOS, GRANDES LOGROS ✦</span></div>
 <div class="route-metrics"><article class="metric mint"><svg><use href="#i-book"/></svg><strong id="route-completed">—</strong><p>aprendizajes<br>completados</p></article><article class="metric lilac"><span class="metric-star" aria-hidden="true">★</span><strong id="route-badges-count">—</strong><p>insignias<br>obtenidas</p></article><article class="metric blue"><span class="metric-shield" aria-hidden="true">⬡</span><strong class="level-text" id="route-level">Explorador</strong><p>Nivel actual</p></article></div>
 <div class="section-heading route-goal-heading"><h2><span aria-hidden="true">◎</span><span id="route-goal-heading">Próximo hito en tu ruta</span></h2><span class="small-caption">TU HISTORIA SIGUE CRECIENDO ✦</span></div>
@@ -86,5 +86,5 @@
 <dialog id="route-milestone-dialog"><button class="dialog-close" type="button" aria-label="Cerrar">×</button><div id="route-milestone-details"></div></dialog>
 <dialog id="help-dialog"><button class="dialog-close" type="button" aria-label="Cerrar">×</button><h2>Tu pasaporte, paso a paso</h2><ol><li>Ingresa tu cédula sin puntos ni espacios.</li><li>Consulta tus cursos aprobados al 100 %.</li><li>Descubre las insignias asociadas a esos cursos.</li></ol><p>El nivel depende de los cursos únicos completados. Usa “Ver más cursos e insignias” para recorrer las hojas de tu historial. Puedes regresar al resumen cuando quieras.</p><p>La consulta es pública por cédula: quien conozca ese número podrá ver el nombre, los cursos y las insignias asociados.</p><p>Si falta información, contacta al equipo de formación.</p><a href="admin/">Administrar la plataforma →</a></dialog>
 <dialog id="course-dialog"><button class="dialog-close" type="button" aria-label="Cerrar">×</button><div id="course-details"></div></dialog>
-<script type="module" src="js/app.js?v=4"></script>
+<script type="module" src="js/app.js?v=5"></script>
 </body></html>

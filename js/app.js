@@ -1,6 +1,7 @@
+import './catalog-model.js?v=5';
 import {connect} from './firebase.js';
 import {appConfig} from '../firebase-config.js';
-import {createRoute} from './progress.js?v=4';
+import {createRoute} from './progress.js?v=5';
 const $=id=>document.getElementById(id);
 const demo=new URLSearchParams(location.search).get('demo')==='1';
 let person=null,publication=null,sequence=0,historyOpen=false,spread=0,flipAnimation=null,flipVersion=0;
@@ -29,7 +30,7 @@ function showSpread(open){
 function cancelFlip(){flipVersion++;flipAnimation?.cancel();flipAnimation=null;document.querySelector('.turn-leaf')?.remove();$('passport').classList.remove('flipping');}
 function resetResults(){
   cancelFlip();showSpread(false);person=null;publication=null;spread=0;
-  $('person-name').textContent='Tu historia está por descubrir';$('person-id').textContent='Consulta tu número de cédula';$('header-id').textContent='—';$('player-level').textContent='Jugador Arcade';
+  $('person-name').textContent='Tu historia está por descubrir';$('person-id').textContent='Consulta tu número de cédula';$('header-id').textContent='—';$('player-level').textContent='Talento JER';
   ['completed-count','badge-count'].forEach(id=>$(id).textContent='—');$('level-name').textContent='Explorador';$('level-number').textContent='Un nuevo comienzo';$('course-count').textContent='';$('updated-at').textContent='APRENDE. AVANZA. DEJA HUELLA.';
   $('course-grid').innerHTML='<div class="empty-card"><h3>Tu pasaporte te espera</h3><p>Ingresa tu cédula para consultar tus cursos e insignias.</p></div>';
   $('badge-grid').innerHTML='<div class="empty-badges"><img src="assets/medal.svg" alt=""><p>Aquí brillarán tus logros.</p></div>';$('more-history').hidden=true;
@@ -81,11 +82,11 @@ function render(){
   let level=appConfig.levelThresholds.filter(n=>count>=n).length;level=Math.max(1,level);
   showSpread(false);randomAvatar();
   $('person-name').textContent=person.name;$('person-id').textContent='Cédula: '+person.cedula;$('header-id').textContent=person.cedula;
-  $('player-level').textContent='Jugador Arcade';$('completed-count').textContent=count;$('badge-count').textContent=person.badges.length;
-  $('level-name').textContent=count>=600?'Leyenda Arcade':count>=75?'Maestro Arcade':appConfig.levelNames[level-1];$('level-number').textContent='Nivel '+level;
+  $('player-level').textContent='Talento JER';$('completed-count').textContent=count;$('badge-count').textContent=person.badges.length;
+  $('level-name').textContent=count>=600?'Leyenda del conocimiento':count>=75?'Maestro del conocimiento':appConfig.levelNames[level-1];$('level-number').textContent='Nivel '+level;
   $('updated-at').textContent=publication.updatedAt?'ACTUALIZADO: '+date(publication.updatedAt.slice(0,10)):'VISTA DE DEMOSTRACIÓN';
   $('course-count').textContent=count+' completados';
-  $('course-grid').innerHTML=person.courses.slice(0,5).map(courseMarkup).join('');
+  $('course-grid').innerHTML=person.courses.length?person.courses.slice(0,5).map(courseMarkup).join(''):'<p class="empty-card">Tu pasaporte está registrado. Aún no tienes cursos aprobados.</p>';
   renderBadgesInto($('badge-grid'),person.badges.slice(0,3),'Aún no hay insignias asociadas en el archivo.');
   $('more-history').hidden=false;route.refresh();
   $('passport').classList.remove('turning');void $('passport').offsetWidth;$('passport').classList.add('turning');
@@ -100,13 +101,19 @@ async function search(event){
       loadDemo();status('Demostración con datos ficticios.');return;
     }
     const {db,storeApi:f}=await connect();
-    const config=await f.getDocFromServer(f.doc(db,'public','config'));
-    if(!config.exists())throw new Error('Todavía no se han importado datos. Contacta al administrador.');
-    const current=config.data();
-    const record=await f.getDocFromServer(f.doc(db,'releases',current.activeRelease,'people',cedula));
+    const [config,catalogDoc,managedDoc]=await Promise.all([
+      f.getDocFromServer(f.doc(db,'public','config')),
+      f.getDocFromServer(f.doc(db,'public','catalog')),
+      f.getDocFromServer(f.doc(db,'managedPeople',cedula))
+    ]);
+    const current=config.exists()?config.data():{};
+    const record=current.activeRelease?await f.getDocFromServer(f.doc(db,'releases',current.activeRelease,'people',cedula)):null;
     if(request!==sequence)return;
-    if(!record.exists())throw new Error('No encontramos cursos aprobados para esta cédula. Verifica el número o contacta al equipo de formación.');
-    person=JSON.parse(record.data().payload);publication=current;render();status('Pasaporte encontrado. Estos son tus cursos aprobados e insignias.');
+    const catalog=catalogDoc.exists()?catalogDoc.data():{courses:[]};
+    person=PassportCatalog.mergePassport(record?.exists()?JSON.parse(record.data().payload):null,managedDoc.exists()?managedDoc.data():null,catalog);
+    if(!person)throw new Error('No encontramos un pasaporte activo para esta cédula. Contacta al equipo de formación.');
+    publication={...current,updatedAt:[current.updatedAt,catalog.updatedAt,managedDoc.data()?.updatedAt].filter(Boolean).sort().at(-1)};
+    render();status('Pasaporte encontrado. Estos son tus cursos aprobados e insignias.');
   }catch(error){if(request===sequence)status(error.code==='permission-denied'?'La publicación cambió o las reglas impiden consultar. Intenta otra vez; si continúa, contacta al administrador.':error.message,true);}
   finally{if(request===sequence){$('search-button').disabled=false;$('search-button').querySelector('span').textContent='Consultar progreso';$('passport').classList.remove('loading');}}
 }
