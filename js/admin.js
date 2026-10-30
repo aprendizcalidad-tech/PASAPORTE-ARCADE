@@ -1,11 +1,13 @@
 import {connect} from './firebase.js';
 import {appConfig} from '../firebase-config.js';
+import './course-import.js?v=1';
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let catalogState=null,personState=null,managementBusy=false;
+let stagedCourseCatalog=null;
 let services,user=null,parsed=null,fingerprint='',currentJob=null,busy=false,worker=null,fileSequence=0,pollTimer=null;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function message(text,error=false){$('admin-status').textContent=text;$('admin-status').classList.toggle('error',error);}
-function controls(value){busy=value;['import-button','catalog-from-excel','drive-button','excel','cancel-job','logout'].forEach(id=>$(id).disabled=value);}
+function controls(value){busy=value;['import-button','catalog-from-excel','drive-button','excel','cancel-job','logout'].forEach(id=>$(id).disabled=value);courseImportControls();}
 async function api(action,data={},retry=true){
   if(!user)throw new Error('Inicia sesión de nuevo.');
   if(!/^https:\/\/script.google.com\/macros\/s\/[\w-]+\/exec$/.test(appConfig.gasUrl))throw new Error('Configura gasUrl con la URL /exec de Apps Script.');
@@ -95,14 +97,34 @@ try{
 }catch(e){message(e.message,true);$('login-submit').disabled=true;$('reset-password').disabled=true;}
 
 
-function resetManagement(){catalogState=null;personState=null;$('person-form').hidden=true;$('course-fields').disabled=true;$('catalog-list').replaceChildren();$('course-form').reset();$('course-id').readOnly=false;$('person-form').reset();$('badge-preview').hidden=true;$('catalog-status').textContent='';}
+function resetManagement(){catalogState=null;personState=null;stagedCourseCatalog=null;$('course-catalog-file').value='';$('course-catalog-preview').hidden=true;courseImportControls();$('person-form').hidden=true;$('course-fields').disabled=true;$('catalog-list').replaceChildren();$('course-form').reset();$('course-id').readOnly=false;$('person-form').reset();$('badge-preview').hidden=true;$('catalog-status').textContent='';}
 async function manage(task){
   if(managementBusy||busy||!user)return;
   managementBusy=true;
+  courseImportControls();
   const uid=user.uid;
   document.querySelectorAll('.management-card button').forEach(b=>b.disabled=true);
   try{await task(()=>user?.uid===uid);}catch(e){message(e.message,true);}
-  finally{managementBusy=false;document.querySelectorAll('.management-card button').forEach(b=>b.disabled=false);}
+  finally{managementBusy=false;document.querySelectorAll('.management-card button').forEach(b=>b.disabled=false);courseImportControls();}
+}
+function courseImportControls(){
+  $('course-catalog-file').disabled=busy||managementBusy;
+  $('apply-course-catalog').disabled=busy||managementBusy||!stagedCourseCatalog;
+}
+async function readCourseCatalog(file){
+  if(!/\.xlsx$/i.test(file.name)||file.size>25*1024*1024)throw new Error('Selecciona un Excel .xlsx de hasta 25 MB.');
+  const buffer=await file.arrayBuffer(),task=new Worker(new URL('./excel-worker.js?v=8',import.meta.url));
+  try{return await new Promise((resolve,reject)=>{
+    task.onmessage=e=>e.data.ok?resolve(e.data.courses):reject(new Error(e.data.error));
+    task.onerror=()=>reject(new Error('No se pudo leer el catálogo. Revisa que el lector Excel esté publicado.'));
+    task.postMessage({mode:'courses',buffer},[buffer]);
+  });}finally{task.terminate();}
+}
+function renderCourseCatalogPreview(courses,catalog){
+  const {counts,rows}=PassportCourseImport.preview(courses,catalog.courses);
+  $('course-catalog-summary').textContent=`${counts.total} cursos · ${counts.active} activos · ${counts.inactive} inactivos. Cambios: ${counts.added} nuevos · ${counts.renamed} nombres · ${counts.archived} pasan a inactivo · ${counts.activated} pasan a activo · ${counts.unchanged} sin cambios.`;
+  $('course-catalog-rows').innerHTML=rows.map(c=>`<tr><td>${esc(c.id)}</td><td>${esc(c.previousTitle||'—')}</td><td>${esc(c.title)}</td><td>${c.active?'Activo':'Inactivo'}</td><td>${esc(c.changes)}</td></tr>`).join('');
+  $('course-catalog-preview').hidden=false;
 }
 function renderCatalog(){
   const courses=catalogState?.courses||[],q=$('catalog-search').value.trim().toLocaleLowerCase('es');
@@ -121,6 +143,26 @@ function renderManual(){
   $('manual-courses').innerHTML=personState.courses.length?personState.courses.map((c,i)=>`<div class="manual-row"><span>${esc(c.id)} · ${esc(c.title)} · ${esc(c.date)}</span><button type="button" class="text-button danger" data-remove-completion="${i}">Retirar de la lista</button></div>`).join(''):'<p>No hay aprobaciones manuales.</p>';
 }
 function initManagement(){
+  $('course-catalog-file').addEventListener('change',()=>{
+    const file=$('course-catalog-file').files[0];stagedCourseCatalog=null;$('course-catalog-preview').hidden=true;courseImportControls();if(!file)return;
+    manage(async current=>{
+      $('course-catalog-status').textContent='Leyendo el catálogo y preparando la vista previa…';
+      try{
+        const [courses,catalog]=await Promise.all([readCourseCatalog(file),api('catalog',{},false)]);
+        if(!current())return;catalogState=catalog;stagedCourseCatalog={courses,revision:catalog.revision||0};
+        renderCourseCatalogPreview(courses,catalog);$('course-catalog-status').textContent='Vista previa lista. Revisa la tabla y pulsa Guardar catálogo de cursos.';
+      }catch(e){if(current()){$('course-catalog-status').textContent=e.message;$('course-catalog-file').value='';}throw e;}
+    });
+  });
+  $('apply-course-catalog').addEventListener('click',()=>manage(async current=>{
+    if(!stagedCourseCatalog)return;
+    const staged=stagedCourseCatalog;
+    try{
+      const data=await api('importCourses',staged,false);
+      if(!current())return;catalogState=data;stagedCourseCatalog=null;$('course-catalog-preview').hidden=true;$('course-fields').disabled=false;renderCatalog();
+      $('course-catalog-status').textContent='Catálogo guardado. Puedes buscar los cursos por su ID y configurar sus insignias.';message('Catálogo actualizado. Se conservaron los diseños de insignias y el historial del personal.');
+    }catch(e){if(current()){$('course-catalog-file').value='';$('course-catalog-status').textContent=e.message+' Si los datos cambiaron, selecciona otra vez el archivo para revisar una nueva vista previa.';}throw e;}
+  }));
   $('catalog-from-excel').addEventListener('click',()=>manage(async current=>{
     if(!parsed||parsed.report.invalid)throw new Error('Primero selecciona y valida el Excel completo.');
     const data=await api('seedCatalog',{courses:parsed.catalogCourses},false);
