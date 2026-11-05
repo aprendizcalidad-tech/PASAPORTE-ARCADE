@@ -8,6 +8,12 @@ let person=null,publication=null,sequence=0,historyOpen=false,spread=0,flipAnima
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=s=>s ? new Intl.DateTimeFormat('es-CO',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(s+'T12:00:00Z')) : 'Sin fecha registrada';
 function safeImage(s){return /^https:\/\/[^\s]+$/i.test(String(s)) || s==='assets/medal.svg' ? s : 'assets/medal.svg';}
+function courseBadges(courses){
+  return courses.map(c=>{
+    const image=safeImage(String(c.image||'').trim());
+    return {courseId:c.id,image,name:c.badgeName||c.title,date:c.date,generic:image==='assets/medal.svg'};
+  });
+}
 function icon(title){const t=title.toLowerCase();return /emergencia|evacua/.test(t)?'🏃':/salud|pausa|bienestar/.test(t)?'♥':/riesgo|prevenci/.test(t)?'⚠':/epp|protecci/.test(t)?'🥽':/seguridad/.test(t)?'⛑':/tecnol|digital|sistema/.test(t)?'▥':'📘';}
 function status(message,error=false){$('search-status').textContent=message;$('search-status').classList.toggle('error',error);}
 const ANIMALS=[['oso',95,45],['gato',545,45],['perro',991,45],['conejo',95,529],['panda',545,529],['mapache',991,529]];
@@ -38,7 +44,7 @@ function resetResults(){
   $('history-courses').replaceChildren();$('history-badges').replaceChildren();route.refresh();
 }
 function courseMarkup(c,i){return `<button class="course-card" type="button" data-course="${i}" aria-label="Ver detalle de ${esc(c.title)}"><span class="course-icon" aria-hidden="true">${icon(c.title)}</span><span class="course-body"><h3>${esc(c.title)}</h3><span class="complete">⬟ Completado</span><span class="course-date">▣ ${esc(date(c.date))}<b>›</b></span></span></button>`;}
-function badgeMarkup(b,i){return `<article class="badge-card" style="--i:${i%6}"><div class="badge-image"><img src="${esc(safeImage(b.image))}" alt="${esc(b.name)}" loading="lazy" referrerpolicy="no-referrer"></div><h3>${esc(b.name)}</h3><p>Aprendizaje que deja huella</p><time datetime="${esc(b.date)}">▣ ${esc(date(b.date))}</time></article>`;}
+function badgeMarkup(b,i){return `<article class="badge-card" style="--i:${i%6}"><div class="badge-image"><img src="${esc(safeImage(b.image))}" alt="${esc(b.name)}" loading="lazy" referrerpolicy="no-referrer"></div><h3>${esc(b.name)}</h3><p>${b.generic?'Insignia genérica':'Aprendizaje que deja huella'}</p><time datetime="${esc(b.date)}">▣ ${esc(date(b.date))}</time></article>`;}
 function renderBadgesInto(target,badges,emptyMessage){
   target.innerHTML=badges.length?badges.map(badgeMarkup).join(''):`<div class="empty-badges"><img src="assets/medal.svg" alt=""><p>${emptyMessage}</p></div>`;
   target.querySelectorAll('img').forEach(img=>img.addEventListener('error',()=>{img.src='assets/medal.svg';img.alt+=' (imagen no disponible)';},{once:true}));
@@ -81,6 +87,7 @@ async function turnTo(open,index=0){
   if(open&&!wasOpen)book.scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
 }
 function render(){
+  person.badges=courseBadges(person.courses);
   const count=person.courses.length;
   let level=appConfig.levelThresholds.filter(n=>count>=n).length;level=Math.max(1,level);
   showSpread(false);
@@ -141,6 +148,7 @@ document.addEventListener('keydown',e=>{
 document.querySelectorAll('.topbar nav a').forEach(link=>link.addEventListener('click',()=>{if(historyOpen){cancelFlip();showSpread(false);}}));
 $('help-button').addEventListener('click',()=>$('help-dialog').showModal());
 document.querySelectorAll('.dialog-close').forEach(button=>button.addEventListener('click',()=>button.closest('dialog').close()));
-document.addEventListener('click',e=>{const button=e.target.closest('[data-course]');if(!button||!person)return;const c=person.courses[Number(button.dataset.course)];$('course-details').innerHTML=`<h2>${esc(c.title)}</h2><span class="complete">✓ Completado · Aprobación 100 %</span><p style="margin-top:20px">Finalización: ${esc(date(c.date))}</p><p>Código de capacitación: ${esc(c.id)}</p><p>${c.image?'Este curso tiene una insignia asociada.':'El archivo no tiene una insignia asociada a este curso.'}</p>`;$('course-dialog').showModal();});
+document.addEventListener('click',e=>{const button=e.target.closest('[data-course]');if(!button||!person)return;const c=person.courses[Number(button.dataset.course)];$('course-details').innerHTML=`<h2>${esc(c.title)}</h2><span class="complete">✓ Completado · Aprobación 100 %</span><p style="margin-top:20px">Finalización: ${esc(date(c.date))}</p><p>Código de capacitación: ${esc(c.id)}</p><p>${c.image?'Este curso tiene una insignia asociada.':'Este curso muestra una insignia genérica mientras se publica su diseño.'}</p>`;$('course-dialog').showModal();});
 randomAvatar();route.refresh();
 if(demo){$('demo-notice').hidden=false;loadDemo();status('Demostración con datos ficticios; no consulta Firebase.');}
+
