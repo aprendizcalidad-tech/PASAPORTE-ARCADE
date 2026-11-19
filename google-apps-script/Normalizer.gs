@@ -39,18 +39,22 @@
   function build(flat, badges) {
     const h = headers(flat, ['fechaInicio','ultimaAccion','fechaFinal','percAprob','capCapacitacionId','Capacitación','capUsuarioId','Nombre','Cedula','Insignia'], 'Archivo Plano');
     const b = headers(badges, ['Id','Nombre','Insignia'], 'Insignias');
-    const catalog = new Map(), people = new Map(), courseIds = new Set(), catalogBadgeUrls = new Set();
+    const catalog = new Map(), catalogCourses = new Map(), people = new Map(), courseIds = new Set(), catalogBadgeUrls = new Set();
     const report = { rows: 0, approved: 0, duplicates: 0, invalid: 0, notApproved: 0, missingBadge: 0, warnings: [] };
     badges.slice(1).forEach(row => {
       const courseId = id(row[b.Id]);
-      if (courseId) catalog.set(courseId, {name: String(row[b.Nombre] || '').trim(), image: url(row[b.Insignia])});
+      if (courseId && courseId.length <= 20) {
+        const name = String(row[b.Nombre] || '').trim(), image = url(row[b.Insignia]);
+        catalog.set(courseId, {name, image});
+        if (name) catalogCourses.set(courseId, {id:courseId,title:name,badgeName:name,image});
+      }
     });
     flat.slice(1).forEach((row, index) => {
       if (!row.some(v => v !== '' && v != null)) return;
       report.rows++;
       const cedula = id(row[h.Cedula]), courseId = id(row[h.capCapacitacionId]);
       const name = String(row[h.Nombre] || '').trim(), title = String(row[h['Capacitación']] || '').trim();
-      if (!cedula || !courseId || !name || !title || cedula.length > 20) {
+      if (!cedula || !courseId || !name || !title || cedula.length > 20 || courseId.length > 20) {
         report.invalid++;
         if (report.warnings.length < 15) report.warnings.push('Fila ' + (index + 2) + ': cédula, ID, nombre o capacitación inválidos.');
         return;
@@ -58,6 +62,7 @@
       courseIds.add(courseId);
       const badge = catalog.get(courseId);
       const image = url(row[h.Insignia]) || (badge ? badge.image : '');
+      catalogCourses.set(courseId, {id:courseId,title,image,badgeName:badge && badge.name ? badge.name : title});
       if (image) catalogBadgeUrls.add(image);
       const percentage = Number(String(row[h.percAprob] == null ? '' : row[h.percAprob]).trim().replace('%','').replace(',','.'));
       if (percentage !== 100) { report.notApproved++; return; }
@@ -83,7 +88,7 @@
       });
       return {cedula:p.cedula, name:p.name, courses, badges:Array.from(earned.values())};
     }).sort((a,b) => a.cedula.localeCompare(b.cedula));
-    return {profiles, report, summary:{people:profiles.length, courseCount:courseIds.size, badgeCount:catalogBadgeUrls.size, rows:report.rows, completed:profiles.reduce((n,p)=>n+p.courses.length,0)}};
+    return {profiles, catalogCourses:Array.from(catalogCourses.values()), report, summary:{people:profiles.length, courseCount:courseIds.size, badgeCount:catalogBadgeUrls.size, rows:report.rows, completed:profiles.reduce((n,p)=>n+p.courses.length,0)}};
   }
   root.ArcadeNormalizer = {build,id,url,date};
   if (typeof module !== 'undefined' && module.exports) module.exports = root.ArcadeNormalizer;

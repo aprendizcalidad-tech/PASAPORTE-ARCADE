@@ -1,4 +1,4 @@
-/* Pasaporte Mundo Arcade — backend. No requiere cuenta de servicio ni clave privada.
+/* Pasaporte del Conocimiento JER — backend. No requiere cuenta de servicio ni clave privada.
  * El propietario ejecuta con OAuth de Google; el visitante administra con Firebase Auth.
  * Copiar Normalizer.gs, Firestore.gs, DriveSync.gs y appsscript.json junto a este archivo.
  */
@@ -8,7 +8,7 @@ function cfg_() {
   if(!c.project || !c.key) throw new Error('Configura FIREBASE_PROJECT_ID y FIREBASE_WEB_API_KEY.');
   return c;
 }
-function doGet() { return json_({ok:true,service:'Pasaporte Mundo Arcade',version:'1.0.0'}); }
+function doGet() { return json_({ok:true,service:'Pasaporte del Conocimiento JER',version:'1.1.0'}); }
 function json_(data) { return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON); }
 function doPost(e) {
   var lock;
@@ -19,6 +19,11 @@ function doPost(e) {
     if(!lock.tryLock(5000)) throw new Error('BUSY: hay otra operación en curso. Reintenta.');
     var result;
     switch(body.action) {
+      case 'seedCatalog': result=seedCatalog_(body,user); break;
+      case 'catalog': result=catalog_(); break;
+      case 'saveCourse': result=saveCourse_(body,user); break;
+      case 'person': result=getPerson_(body.cedula); break;
+      case 'savePerson': result=savePerson_(body,user); break;
       case 'begin': result=begin_(body,user); break;
       case 'chunk': result=chunk_(body,user); break;
       case 'publish': result=publish_(body.importId,user); break;

@@ -10,6 +10,14 @@ service cloud.firestore {
       allow get: if request.auth != null && request.auth.uid == uid;
       allow list, write: if false;
     }
+    match /public/catalog {
+      allow get: if true;
+      allow list, write: if false;
+    }
+    match /managedPeople/{cedula} {
+      allow get: if cedula.matches('^[0-9]{1,20}$');
+      allow list, write: if false;
+    }
     match /public/config {
       allow get: if true;
       allow list, write: if false;
