@@ -1,5 +1,3 @@
-import './catalog-model.js?v=5';
-import {connect} from './firebase.js';
 import {appConfig} from '../firebase-config.js';
 import {createRoute} from './progress.js?v=5';
 const $=id=>document.getElementById(id);
@@ -101,6 +99,29 @@ function render(){
   $('more-history').hidden=false;route.refresh();
   $('passport').classList.remove('turning');void $('passport').offsetWidth;$('passport').classList.add('turning');
 }
+async function consultPassport(cedula){
+  const url='https://ztswmfmnknpmvamulxcm.supabase.co/functions/v1/passport-lookup';
+  let response;
+  try{
+    response=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({cedula}),
+      cache:'no-store',
+      signal:AbortSignal.timeout(12000)
+    });
+  }catch{
+    throw new Error('No pudimos conectar con el Pasaporte. Intenta de nuevo.');
+  }
+  if(response.status===404)throw new Error('No encontramos un pasaporte activo para esta cédula. Contacta al equipo de formación.');
+  if(response.status===429)throw new Error('Hay muchas consultas en este momento. Espera un minuto e intenta de nuevo.');
+  if(!response.ok)throw new Error('El Pasaporte no está disponible en este momento. Intenta de nuevo.');
+  const result=await response.json();
+  if(result.person?.cedula!==cedula || !Array.isArray(result.person.courses) || !result.publication){
+    throw new Error('No pudimos leer el historial del Pasaporte. Intenta de nuevo.');
+  }
+  return result;
+}
 async function search(event){
   event.preventDefault();const cedula=$('cedula').value.trim();
   if(!/^\d{1,20}$/.test(cedula)){status('Escribe tu cédula sin puntos ni espacios.',true);return;}
@@ -110,21 +131,12 @@ async function search(event){
       if(cedula!=='1234567890')throw new Error('En la demostración usa la cédula ficticia 1234567890.');
       loadDemo();status('Demostración con datos ficticios.');return;
     }
-    const {db,storeApi:f}=await connect();
-    const [config,catalogDoc,managedDoc]=await Promise.all([
-      f.getDocFromServer(f.doc(db,'public','config')),
-      f.getDocFromServer(f.doc(db,'public','catalog')),
-      f.getDocFromServer(f.doc(db,'managedPeople',cedula))
-    ]);
-    const current=config.exists()?config.data():{};
-    const record=current.activeRelease?await f.getDocFromServer(f.doc(db,'releases',current.activeRelease,'people',cedula)):null;
+    const result=await consultPassport(cedula);
     if(request!==sequence)return;
-    const catalog=catalogDoc.exists()?catalogDoc.data():{courses:[]};
-    person=PassportCatalog.mergePassport(record?.exists()?JSON.parse(record.data().payload):null,managedDoc.exists()?managedDoc.data():null,catalog);
-    if(!person)throw new Error('No encontramos un pasaporte activo para esta cédula. Contacta al equipo de formación.');
-    publication={...current,updatedAt:[current.updatedAt,catalog.updatedAt,managedDoc.data()?.updatedAt].filter(Boolean).sort().at(-1)};
+    person=result.person;
+    publication=result.publication;
     render();status('Pasaporte encontrado. Estos son tus cursos aprobados e insignias.');
-  }catch(error){if(request===sequence)status(error.code==='permission-denied'?'La publicación cambió o las reglas impiden consultar. Intenta otra vez; si continúa, contacta al administrador.':error.message,true);}
+  }catch(error){if(request===sequence)status(error.message,true);}
   finally{if(request===sequence){$('search-button').disabled=false;$('search-button').querySelector('span').textContent='Consultar progreso';$('passport').classList.remove('loading');}}
 }
 function loadDemo(){
@@ -151,4 +163,5 @@ document.querySelectorAll('.dialog-close').forEach(button=>button.addEventListen
 document.addEventListener('click',e=>{const button=e.target.closest('[data-course]');if(!button||!person)return;const c=person.courses[Number(button.dataset.course)];$('course-details').innerHTML=`<h2>${esc(c.title)}</h2><span class="complete">✓ Completado · Aprobación 100 %</span><p style="margin-top:20px">Finalización: ${esc(date(c.date))}</p><p>Código de capacitación: ${esc(c.id)}</p><p>${c.image?'Este curso tiene una insignia asociada.':'Este curso muestra una insignia genérica mientras se publica su diseño.'}</p>`;$('course-dialog').showModal();});
 randomAvatar();route.refresh();
 if(demo){$('demo-notice').hidden=false;loadDemo();status('Demostración con datos ficticios; no consulta Firebase.');}
+
 
