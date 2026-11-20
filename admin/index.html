@@ -1,5 +1,9 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Administración · JER</title><link rel="icon" href="../assets/sello-jer.jpeg"><link rel="stylesheet" href="../styles.css?v=7"><link rel="stylesheet" href="admin.css?v=9"></head><body class="admin-body import-panel">
-<header class="admin-header"><a class="brand" href="../"><svg class="brand-logo" viewBox="430 293 1059 488" role="img" aria-label="JER" xmlns="http://www.w3.org/2000/svg"><image href="../assets/logo-jer-color.png" width="1920" height="1080"/></svg><span>PASAPORTE<strong>DEL CONOCIMIENTO</strong></span></a><a class="back-link" href="../">← Volver al pasaporte</a></header>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Administración · JER</title><link rel="icon" href="../assets/sello-jer.jpeg"><link rel="stylesheet" href="../styles.css?v=7"><link rel="stylesheet" href="admin.css?v=10"></head><body class="admin-body import-panel">
+<header class="admin-header"><a class="brand" href="../"><svg class="brand-logo" viewBox="430 293 1059 488" role="img" aria-label="JER" xmlns="http://www.w3.org/2000/svg"><image href="../assets/logo-jer-color.png" width="1920" height="1080"/></svg><span>PASAPORTE<strong>DEL CONOCIMIENTO</strong></span></a><div class="panel-header-actions">
+<a class="secondary" id="back-passport" href="../">← Volver al pasaporte</a>
+<button class="secondary" id="back-menu" type="button" hidden>← Volver al menú anterior</button>
+<button class="secondary" id="logout" type="button" hidden>Cerrar sesión</button>
+</div></header>
 <main class="admin-main">
 <section class="admin-card login-card" id="login">
 <h1>Administrar el Pasaporte</h1>
@@ -10,10 +14,60 @@
 <button class="primary">Iniciar sesión</button>
 </form>
 </section>
-<section id="dashboard" hidden>
+<section id="workspace" class="panel-layout" hidden>
+<nav class="panel-sidebar" aria-label="Menú de administración">
+<button type="button" data-view="dashboard" aria-current="page">Dashboard</button>
+<button type="button" data-view="access">Control de accesos</button>
+<button type="button" data-view="update">Actualización</button>
+</nav>
+<div class="panel-content">
+<section id="dashboard" data-panel>
+<div class="dashboard-heading"><div>
+<h1 tabindex="-1">Dashboard</h1>
+<p>Resumen de la información publicada en el Pasaporte.</p>
+</div></div>
+<p class="panel-state" id="dashboard-state" role="status"></p>
+<div id="dashboard-data" hidden>
+<p id="reference-year" class="panel-year"></p>
+<dl class="panel-kpis">
+<div><dt>Personas registradas</dt><dd id="metric-people"></dd></div>
+<div><dt>Cursos registrados</dt><dd id="metric-courses"></dd></div>
+<div><dt>Insignias registradas</dt><dd id="metric-badges"></dd></div>
+</dl>
+<div class="panel-charts">
+<section class="admin-card">
+<h2>Cobertura de insignias</h2>
+<div id="badge-ring" class="badge-ring" aria-hidden="true"><strong id="badge-percent"></strong></div>
+<dl class="panel-breakdown">
+<div><dt>Cursos con insignia</dt><dd id="badge-covered"></dd></div>
+<div><dt>Cursos sin insignia</dt><dd id="badge-missing"></dd></div>
+</dl>
+</section>
+<section class="admin-card">
+<h2>Cursos con más aprobaciones</h2>
+<p id="approval-total"></p>
+<ol id="top-courses" class="panel-ranking"></ol>
+</section>
+</div>
+</div>
+</section>
+<section id="access" data-panel hidden>
+<div class="dashboard-heading"><div><h1 tabindex="-1">Control de accesos</h1><p>Consulta tu cuenta y los administradores autorizados.</p></div></div>
+<p class="panel-state" id="access-state" role="status"></p>
+<div id="access-data" hidden>
+<section class="admin-card panel-account">
+<h2>Mi cuenta</h2>
+<p id="account-email"></p><span id="account-role" class="panel-role"></span>
+</section>
+<section class="admin-card">
+<h2>Administradores autorizados</h2>
+<ul id="access-list" class="panel-access-list"></ul>
+</section>
+</div>
+</section>
+<section id="update" data-panel hidden>
 <div class="dashboard-heading">
-<div><h1>Actualizar el Pasaporte</h1><p>Carga el Excel de Formación y revisa los cambios antes de publicarlos.</p></div>
-<button type="button" class="secondary" id="logout">Cerrar sesión</button>
+<div><h1 tabindex="-1">Actualizar el Pasaporte</h1><p>Carga el Excel de Formación y revisa los cambios antes de publicarlos.</p></div>
 </div>
 <form id="import-form" class="admin-card import-workflow">
 <fieldset class="import-types">
@@ -42,7 +96,9 @@
 </section>
 </section>
 <p class="admin-status" id="status" role="status" aria-live="polite"></p>
+</div>
+</section>
 </main>
 <script src="../assets/vendor/xlsx.full.min.js" defer></script>
-<script src="supabase-import.js?v=2" defer></script>
+<script src="supabase-import.js?v=3" defer></script>
 </body></html>

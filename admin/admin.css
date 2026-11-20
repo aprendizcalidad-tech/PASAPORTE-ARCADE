@@ -98,3 +98,67 @@
   .import-options { grid-template-columns: 1fr; }
   .import-actions > button { width: 100%; }
 }
+
+/* Administración del Pasaporte */
+.import-panel .admin-main { max-width: 1150px; }
+.panel-header-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.panel-header-actions .secondary { display: inline-flex; align-items: center; text-decoration: none; }
+.panel-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 24px; }
+.panel-sidebar {
+  display: grid; gap: 6px; align-self: start; padding: 12px;
+  border: 1px solid #365976; border-radius: 15px; background: #102d49;
+}
+.panel-sidebar button {
+  min-height: 44px; padding: 8px 12px; border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: #e4f3ff; font: inherit; font-weight: 650; text-align: left; cursor: pointer;
+}
+.panel-sidebar button:hover { background: #194364; }
+.panel-sidebar button[aria-current] { border-color: #5aa0ce; background: #d9f0ff; color: #123b59; }
+.panel-content { min-width: 0; }
+.panel-content h1:focus { outline: none; }
+.panel-state, .panel-year { color: #c0d8ed; margin: 0 0 14px; }
+.panel-state:empty { display: none; }
+.panel-kpis, .panel-charts { display: grid; gap: 13px; margin: 0 0 16px; }
+.panel-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.panel-kpis div {
+  display: grid; gap: 10px; padding: 18px; border: 1px solid #a5c8e1;
+  border-top: 4px solid #2098cd; border-radius: 12px; background: #edf7fd; color: #153854;
+}
+.panel-kpis dd { margin: 0; font-size: clamp(24px, 4vw, 38px); font-weight: 800; }
+.panel-charts { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
+.panel-charts .admin-card, #access-data .admin-card { padding: 22px; }
+.panel-charts h2, #access-data h2 { font-size: 20px; color: #132b48; }
+.badge-ring {
+  position: relative; display: grid; place-items: center; width: min(146px, 100%); aspect-ratio: 1;
+  margin: 16px auto; border-radius: 50%;
+  background: conic-gradient(#096c9f var(--coverage), #d3e4ef 0);
+}
+.badge-ring::before { content: ''; position: absolute; inset: 13%; border-radius: 50%; background: #f7f8f8; }
+.badge-ring strong { z-index: 1; color: #173c59; font-size: 22px; }
+.panel-breakdown { display: grid; gap: 8px; margin-bottom: 0; }
+.panel-breakdown div { display: flex; justify-content: space-between; gap: 8px; }
+.panel-breakdown dd { margin: 0; font-weight: 700; }
+.panel-ranking { padding-left: 24px; margin: 14px 0 0; }
+.panel-ranking li { margin-bottom: 12px; padding-left: 3px; }
+.panel-ranking strong { display: block; color: #125982; }
+.rank-bar { display: block; height: 6px; margin-top: 4px; border-radius: 6px;
+  background: linear-gradient(to right, #137aa9 var(--rank), #dae8ef var(--rank)); }
+.panel-account { margin-bottom: 14px; }
+.panel-account #account-email { margin-bottom: 10px; overflow-wrap: anywhere; }
+.panel-role { display: inline-block; border-radius: 8px; padding: 4px 8px;
+  background: #d9eefb; color: #154663; font-size: 13px; font-weight: 700; }
+.panel-access-list { list-style: none; padding: 0; }
+.panel-access-list li { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between;
+  padding: 12px 0; gap: 8px; overflow-wrap: anywhere; border-top: 1px solid #cddce6; }
+@media (max-width: 800px) {
+  .panel-layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .panel-sidebar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .panel-sidebar button { text-align: center; }
+}
+@media (max-width: 560px) {
+  .import-panel .admin-header { height: auto; min-height: 85px; flex-wrap: wrap; gap: 10px; padding-block: 12px; }
+  .panel-header-actions { justify-content: flex-start; }
+  .panel-header-actions .secondary { padding-inline: 8px; font-size: 12px; }
+  .panel-kpis, .panel-charts { grid-template-columns: minmax(0, 1fr); }
+  .panel-sidebar button { padding-inline: 4px; font-size: 13px; }
+}

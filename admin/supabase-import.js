@@ -62,12 +62,108 @@ login.addEventListener('submit', (event) => {
     }
     token = session.access_token;
     get('login').hidden = true;
-    get('dashboard').hidden = false;
-    report('Selecciona el archivo que quieres actualizar.');
+    get('workspace').hidden = false;
+    get('logout').hidden = false;
+    await openPanel('dashboard');
   });
 });
 
 get('logout').addEventListener('click', () => location.reload());
+
+const panelButtons = [...document.querySelectorAll('[data-view]')];
+const panels = [...document.querySelectorAll('[data-panel]')];
+const formatCount = new Intl.NumberFormat('es-CO');
+
+function renderDashboard(data) {
+  const { people, courses, badges, approvals, year, top_courses: topCourses } = data;
+  get('reference-year').textContent = 'Catálogo activo · ' + year;
+  for (const [key, count] of Object.entries({ people, courses, badges })) {
+    get('metric-' + key).textContent = formatCount.format(count);
+  }
+  const coverage = courses ? badges / courses : 0;
+  get('badge-ring').style.setProperty('--coverage', coverage * 100 + '%');
+  const percent = new Intl.NumberFormat('es-CO', { style: 'percent', maximumFractionDigits: 1 });
+  get('badge-percent').textContent = percent.format(coverage);
+  get('badge-covered').textContent = formatCount.format(badges);
+  get('badge-missing').textContent = formatCount.format(courses - badges);
+  get('approval-total').textContent = approvals
+    ? formatCount.format(approvals) + ' aprobaciones registradas en total'
+    : 'Todavía no hay aprobaciones registradas.';
+
+  const maximum = topCourses[0]?.approvals;
+  get('top-courses').replaceChildren(...topCourses.map((course) => {
+    const item = document.createElement('li');
+    const title = document.createElement('span');
+    const count = document.createElement('strong');
+    const bar = document.createElement('span');
+    title.textContent = course.title;
+    count.textContent = formatCount.format(course.approvals);
+    bar.className = 'rank-bar';
+    bar.style.setProperty('--rank', course.approvals / maximum * 100 + '%');
+    bar.setAttribute('aria-hidden', 'true');
+    item.append(title, count, bar);
+    return item;
+  }));
+}
+
+function renderAccess(accounts) {
+  const current = accounts.find((account) => account.current);
+  get('account-email').textContent = current.email;
+  get('account-role').textContent = current.role;
+  get('access-list').replaceChildren(...accounts.map((account) => {
+    const item = document.createElement('li');
+    const email = document.createElement('span');
+    const role = document.createElement('span');
+    email.textContent = account.email + (account.current ? ' · Mi cuenta' : '');
+    role.textContent = account.role + (account.confirmed ? '' : ' · Correo pendiente de confirmar');
+    role.className = 'panel-role';
+    item.append(email, role);
+    return item;
+  }));
+}
+
+async function openPanel(view) {
+  panels.forEach((panel) => { panel.hidden = panel.id !== view; });
+  panelButtons.forEach((button) => {
+    if (button.dataset.view === view) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
+  get('back-menu').hidden = view !== 'update';
+  get('back-passport').hidden = view === 'update';
+  get(view).querySelector('h1').focus();
+  report('');
+
+  if (view === 'update') {
+    report(batch ? 'Revisa la vista previa antes de publicar.' : 'Selecciona el archivo que quieres actualizar.');
+    return;
+  }
+
+  const state = get(view + '-state');
+  const content = get(view + '-data');
+  content.hidden = true;
+  state.textContent = 'Consultando información…';
+  try {
+    const data = await request('/rest/v1/rpc/passport_admin_overview', { section: view }, token);
+    if (view === 'dashboard' && !data) {
+      state.textContent = 'Todavía no hay un catálogo activo.';
+      return;
+    }
+    if (view === 'dashboard') renderDashboard(data);
+    else renderAccess(data);
+    state.textContent = '';
+    content.hidden = false;
+  } catch (error) {
+    state.textContent = error.message === 'JWT expired'
+      ? 'La sesión venció. Cierra sesión y vuelve a ingresar.'
+      : 'No se pudo cargar la información. Vuelve a seleccionar esta opción para reintentar.';
+  }
+}
+
+panelButtons.forEach((button) => {
+  button.addEventListener('click', () => run(() => openPanel(button.dataset.view)));
+});
+get('back-menu').addEventListener('click', () => run(() => openPanel('dashboard')));
+
 
 function resetPreview() {
   batch = undefined;
