@@ -11,7 +11,8 @@ let token;
 let batch;
 let busy = false;
 
-function report(message) {
+function report(message, tone = '') {
+  get('status').dataset.tone = tone;
   get('status').textContent = message;
 }
 
@@ -40,7 +41,7 @@ async function run(task) {
   try {
     await task();
   } catch (error) {
-    report(error.message === 'JWT expired' ? 'La sesión venció. Cierra sesión y vuelve a ingresar.' : error.message);
+    report(error.message === 'JWT expired' ? 'La sesión venció. Cierra sesión y vuelve a ingresar.' : error.message, 'error');
   } finally {
     for (const control of controls) control.disabled = false;
     busy = false;
@@ -180,8 +181,17 @@ function showSummary(stats) {
   }
 }
 
-kind.addEventListener('change', resetPreview);
-get('excel').addEventListener('change', resetPreview);
+for (const option of form.querySelectorAll('[name="import-type"]')) {
+  option.addEventListener('change', () => {
+    kind.value = option.value;
+    resetPreview();
+    report('Selecciona el archivo que quieres actualizar.');
+  });
+}
+get('excel').addEventListener('change', () => {
+  resetPreview();
+  report(get('excel').files.length ? 'Archivo listo para revisar.' : 'Selecciona el archivo que quieres actualizar.');
+});
 form.addEventListener('submit', (event) => {
   event.preventDefault();
   run(async () => {
@@ -199,6 +209,7 @@ form.addEventListener('submit', (event) => {
     showSummary({ ...stats, ...(missing ? { sin_cedula: missing } : {}) });
     batch = draft.batch;
     preview.hidden = false;
+    preview.focus();
     report('Revisa la vista previa antes de publicar.');
   });
 });
@@ -207,10 +218,9 @@ get('publish').addEventListener('click', () => run(async () => {
   if (!batch) return;
   report('Publicando cambios…');
   await rpc('publish', { batch });
-  resetPreview();
   form.reset();
   resetPreview();
-  report('Cambios publicados en el Pasaporte del Conocimiento.');
+  report('Cambios publicados en el Pasaporte del Conocimiento.', 'success');
 }));
 
 resetPreview();

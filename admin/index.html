@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Administración · JER</title><link rel="icon" href="../assets/sello-jer.jpeg"><link rel="stylesheet" href="../styles.css?v=7"><link rel="stylesheet" href="admin.css?v=8"></head><body class="admin-body">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Administración · JER</title><link rel="icon" href="../assets/sello-jer.jpeg"><link rel="stylesheet" href="../styles.css?v=7"><link rel="stylesheet" href="admin.css?v=9"></head><body class="admin-body import-panel">
 <header class="admin-header"><a class="brand" href="../"><svg class="brand-logo" viewBox="430 293 1059 488" role="img" aria-label="JER" xmlns="http://www.w3.org/2000/svg"><image href="../assets/logo-jer-color.png" width="1920" height="1080"/></svg><span>PASAPORTE<strong>DEL CONOCIMIENTO</strong></span></a><a class="back-link" href="../">← Volver al pasaporte</a></header>
 <main class="admin-main">
 <section class="admin-card login-card" id="login">
@@ -10,20 +10,38 @@
 <button class="primary">Iniciar sesión</button>
 </form>
 </section>
-<section class="admin-card" id="dashboard" hidden>
-<div class="dashboard-heading"><h1>Actualizar la base de datos</h1><button type="button" class="secondary" id="logout">Cerrar sesión</button></div>
-<form id="import-form">
-<label for="kind">Tipo de archivo</label>
-<select id="kind"><option value="catalog">Capacitaciones e insignias</option><option value="approvals">Personas y cursos aprobados</option></select>
+<section id="dashboard" hidden>
+<div class="dashboard-heading">
+<div><h1>Actualizar el Pasaporte</h1><p>Carga el Excel de Formación y revisa los cambios antes de publicarlos.</p></div>
+<button type="button" class="secondary" id="logout">Cerrar sesión</button>
+</div>
+<form id="import-form" class="admin-card import-workflow">
+<fieldset class="import-types">
+<legend><span class="import-step">1</span> ¿Qué quieres actualizar?</legend>
+<div class="import-options">
+<label class="import-option"><input type="radio" name="import-type" value="catalog" checked><span><strong>Capacitaciones e insignias</strong><small>Agrega cursos o actualiza sus nombres e imágenes.</small></span></label>
+<label class="import-option"><input type="radio" name="import-type" value="approvals"><span><strong>Personas y cursos aprobados</strong><small>Agrega personas y aprobaciones a sus pasaportes.</small></span></label>
+</div>
+</fieldset>
+<select id="kind" hidden aria-label="Tipo de archivo"><option value="catalog">Capacitaciones e insignias</option><option value="approvals">Personas y cursos aprobados</option></select>
+<section aria-labelledby="upload-heading">
+<h2 id="upload-heading"><span class="import-step">2</span> Carga tu Excel</h2>
 <p id="format"></p>
-<label for="excel">Archivo Excel (.xlsx)</label><input id="excel" type="file" accept=".xlsx" required>
-<button class="primary">Revisar archivo</button>
-</form>
-<section id="preview" hidden><h2>Vista previa</h2><dl id="summary"></dl>
-<button type="button" class="primary" id="publish">Publicar cambios</button></section>
+<label class="file-drop import-file" for="excel">
+<strong>Seleccionar archivo Excel</strong><small>.xlsx · hasta 25 MB</small>
+<input id="excel" type="file" accept=".xlsx" required aria-describedby="format">
+</label>
+<div class="import-actions"><button class="primary">Revisar archivo</button></div>
 </section>
-<p class="admin-card" id="status" role="status" aria-live="polite"></p>
+</form>
+<section id="preview" class="admin-card import-preview" tabindex="-1" hidden>
+<h2><span class="import-step">3</span> Revisa los cambios</h2>
+<p>Confirma el resumen para aplicar los cambios al Pasaporte.</p>
+<dl id="summary"></dl>
+<div class="import-actions"><button type="button" class="primary" id="publish">Publicar cambios</button></div>
+</section>
+</section>
 </main>
 <script src="../assets/vendor/xlsx.full.min.js" defer></script>
-<script src="supabase-import.js" defer></script>
+<script src="supabase-import.js?v=2" defer></script>
 </body></html>

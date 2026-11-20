@@ -4,3 +4,97 @@
 
 .admin-header .brand-logo{width:90px;height:50px}@media(max-width:700px){.admin-header .brand-logo{width:65px;height:38px}}
 .course-catalog-import{border:1px solid #b5ccda;border-radius:12px;padding:20px;margin:20px 0 28px;background:#f2f7fa}.course-catalog-import h3{margin-top:0}.course-catalog-table{overflow:auto;max-height:390px;border:1px solid #d4e0e9;border-radius:9px;margin:18px 0}.course-catalog-table table{border-collapse:collapse;width:100%;font-size:13px;background:#fff;min-width:690px}.course-catalog-table th{position:sticky;top:0;background:#0c3d5b;color:#fff;text-align:left}.course-catalog-table th,.course-catalog-table td{padding:10px 12px;vertical-align:top;border-bottom:1px solid #e0e8ee}.course-catalog-table td:first-child{white-space:nowrap;font-weight:700}.course-catalog-import input[type=file]{max-width:100%}.course-catalog-import #course-catalog-summary{font-weight:600}.course-catalog-import [hidden]{display:none!important}
+
+/* Excel import panel */
+.import-panel [hidden] { display: none !important; }
+.import-panel .admin-main { max-width: 1020px; }
+.import-panel .dashboard-heading h1 { color: #f7fbff; }
+.import-panel .dashboard-heading p { color: #b4cee4; }
+.import-panel .login-card h1,
+.import-workflow h2,
+.import-preview h2 { color: #132b48; }
+
+.import-workflow { display: grid; gap: 26px; }
+.import-types { min-width: 0; margin: 0; padding: 0; border: 0; }
+.import-types legend,
+.import-workflow h2,
+.import-preview h2 {
+  margin: 0 0 12px;
+  padding: 0;
+  font-size: clamp(18px, 2.5vw, 22px);
+  font-weight: 750;
+}
+.import-step {
+  display: inline-grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: #d8eef9;
+  color: #104a68;
+  font-size: 14px;
+  vertical-align: middle;
+}
+.import-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.import-panel .admin-card label.import-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin: 0;
+  padding: 15px;
+  border: 2px solid #ccd9e4;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+.import-panel .admin-card .import-option input {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  margin: 1px 0 0;
+  accent-color: #085788;
+}
+.import-option strong { display: block; line-height: 1.3; }
+.import-option small { display: block; margin-top: 6px; color: #4c6278; line-height: 1.45; }
+.import-panel .admin-card .import-option:has(input:checked) { border-color: #126697; background: #eaf6fc; }
+.import-panel .admin-card .import-option:focus-within,
+.import-file:focus-within { outline: 3px solid #287dab; outline-offset: 3px; }
+.import-workflow #format { margin: 0 0 14px; color: #415b74; }
+.import-file { gap: 6px; background: #eef7fb; padding: 18px; }
+.import-file small { color: #435d76; }
+.import-file input { color: #132b48; width: fit-content; font-size: 14px; }
+.import-file input::file-selector-button {
+  border: 1px solid #a3c6dd;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-right: 8px;
+  background: #fff;
+  color: #155581;
+  font-weight: 650;
+  cursor: pointer;
+}
+.import-actions { display: flex; justify-content: flex-end; margin-top: 15px; }
+.import-preview { margin-top: 16px; }
+.import-preview dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin: 16px 0;
+  border: 1px solid #cddfe9;
+  border-radius: 10px;
+  background: #eef6fc;
+  overflow: hidden;
+}
+.import-preview dt,
+.import-preview dd { padding: 10px 13px; margin: 0; border-bottom: 1px solid #cddfe9; }
+.import-preview dt:last-of-type,
+.import-preview dd:last-of-type { border-bottom: 0; }
+.import-preview dd { font-weight: 750; text-align: right; }
+.import-panel #status:empty { display: none; }
+.import-panel #status { margin: 14px 0 0; border: 1px solid #45657d; }
+.import-panel #status[data-tone="error"] { background: #4d2238; color: #ffe5eb; border-color: #b56c82; }
+.import-panel #status[data-tone="success"] { background: #12423d; color: #d8fff0; border-color: #458c7c; }
+@media (max-width: 560px) {
+  .import-options { grid-template-columns: 1fr; }
+  .import-actions > button { width: 100%; }
+}
